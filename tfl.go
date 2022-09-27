@@ -106,7 +106,14 @@ func respondToLineRequest(req lineRequest, lines []Line, linesCache map[string]L
 	if req.lineID == "" {
 		req.resp <- lines
 	} else {
-		req.resp <- []Line{linesCache[req.lineID]}
+		line, ok := linesCache[req.lineID]
+		if ok {
+			req.resp <- []Line{line}
+		} else {
+			req.resp <- []Line{
+				{ID: req.lineID, Name: req.lineID},
+			}
+		}
 	}
 }
 
