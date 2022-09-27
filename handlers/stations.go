@@ -166,16 +166,16 @@ func (h handlers) registerStationsHandler() {
 	stationsGET.HandleFunc("/{line_id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		lineID := vars["line_id"]
-		stations := tfl.TFLStaticDataGlobal.Stations(lineID)
+		routes := tfl.TFLStaticDataGlobal.Routes(lineID)
 		lineDetails := tfl.TFLStaticDataGlobal.LineDetails(lineID)
-		err := h.tmpls.ExecuteTemplate(w, "stations-choose.html", struct {
+		err := h.tmpls.ExecuteTemplate(w, "stations-routes-choose.html", struct {
 			LineID   string
 			LineName string
-			Stations []tfl.Station
+			Routes   []tfl.Route
 		}{
 			LineID:   lineID,
 			LineName: lineDetails.Name,
-			Stations: stations,
+			Routes:   routes,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
