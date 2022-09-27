@@ -70,7 +70,7 @@ func (af *arrivalsFetcher) calculateArrivalsByPlatform(arrivals []tflStationArri
 		pform.Arrivals = append(pform.Arrivals, arrival{
 			VehicleID:       arr.VehicleId,
 			Towards:         arr.Towards,
-			CurrentLocation: arr.CurrentLocation,
+			CurrentLocation: arr.calculateCurrentLocation(),
 			TimeToStation:   time.Second * time.Duration(int64(arr.TimeToStation)),
 			ExpectedArrival: arr.expectedArrivalAsTime(),
 		})
@@ -105,6 +105,13 @@ func (tsa tflStationArrival) expectedArrivalAsTime() time.Time {
 		log.Printf("unable to parse %s as date: %v", tsa.ExpectedArrival, err)
 	}
 	return expectedArrival
+}
+
+func (tsa tflStationArrival) calculateCurrentLocation() string {
+	if tsa.CurrentLocation != "" {
+		return tsa.CurrentLocation
+	}
+	return "Not Available"
 }
 
 type arrivals struct {

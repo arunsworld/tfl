@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -230,11 +231,12 @@ func (sd *staticData) Routes(lineID string) []Route {
 }
 
 type staticFetcher struct {
-	c           http.Client
-	linesURL    func() string
-	stationsURL func(string) string
-	routesURL   func(string) string
-	statusURL   func() string
+	c             http.Client
+	linesURL      func() string
+	stationsURL   func(string) string
+	routesURL     func(string) string
+	statusURL     func() string
+	statusByIDURL func([]string) string
 }
 
 func newStaticFetcher() *staticFetcher {
@@ -252,6 +254,9 @@ func newStaticFetcher() *staticFetcher {
 		},
 		statusURL: func() string {
 			return LineStatusAPI
+		},
+		statusByIDURL: func(ids []string) string {
+			return fmt.Sprintf(LineStatusByIDAPI, strings.Join(ids, ","))
 		},
 	}
 }
@@ -432,6 +437,30 @@ func (sf *staticFetcher) fetchStatus() (map[string]Status, error) {
 	statuses := []tflStatus{}
 	if err := json.Unmarshal(body, &statuses); err != nil {
 		return nil, fmt.Errorf("problem parsing status data from TFL: %v", err)
+	}
+	result := make(map[string]Status)
+	for _, s := range statuses {
+		result[s.Id] = Status{
+			StatusDescriptions: s.statusDescriptions(),
+		}
+	}
+	return result, nil
+}
+
+func (sf *staticFetcher) fetchStatusByIDs(ids []string) (map[string]Status, error) {
+	url := sf.statusByIDURL(ids)
+	resp, err := sf.c.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("problem fetching status data by ID from API: %v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("problem reading status data by ID from response: %v", err)
+	}
+	statuses := []tflStatus{}
+	if err := json.Unmarshal(body, &statuses); err != nil {
+		return nil, fmt.Errorf("problem parsing status data by ID from TFL: %v", err)
 	}
 	result := make(map[string]Status)
 	for _, s := range statuses {
