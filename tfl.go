@@ -16,6 +16,7 @@ type TFLStaticData interface {
 	Lines() []Line
 	LineDetails(string) Line
 	Stations(string) []Station
+	Routes(string) []Route
 }
 
 type Line struct {
@@ -29,6 +30,11 @@ type Status struct {
 	StatusDescriptions []string
 }
 
+type Route struct {
+	Name     string
+	Stations []Station
+}
+
 type Station struct {
 	ID       string
 	Name     string
@@ -39,6 +45,7 @@ type staticData struct {
 	fetcher         *staticFetcher
 	lineRequests    chan lineRequest
 	stationRequests chan stationRequest
+	routeRequests   chan routeRequest
 }
 
 type lineRequest struct {
@@ -51,14 +58,21 @@ type stationRequest struct {
 	resp   chan []Station
 }
 
+type routeRequest struct {
+	lineID string
+	resp   chan []Route
+}
+
 func newStaticData() *staticData {
 	result := &staticData{
 		lineRequests:    make(chan lineRequest),
 		stationRequests: make(chan stationRequest),
+		routeRequests:   make(chan routeRequest),
 		fetcher:         newStaticFetcher(),
 	}
 	go result.monitorLineFetch()
 	go result.monitorStationFetch()
+	go result.monitorRouteFetch()
 	return result
 }
 
@@ -110,6 +124,25 @@ func (sd *staticData) monitorStationFetch() {
 		}
 		stations[req.lineID] = _stations
 		req.resp <- _stations
+	}
+}
+
+func (sd *staticData) monitorRouteFetch() {
+	routes := map[string][]Route{}
+	for req := range sd.routeRequests {
+		v, ok := routes[req.lineID]
+		if ok {
+			req.resp <- v
+			continue
+		}
+		_routes, err := sd.fetcher.fetchRoutes(req.lineID)
+		if err != nil {
+			log.Printf("ERROR fetching routes: %v", err)
+			req.resp <- []Route{}
+			continue
+		}
+		routes[req.lineID] = _routes
+		req.resp <- _routes
 	}
 }
 
@@ -178,10 +211,28 @@ func (sd *staticData) Stations(lineID string) []Station {
 	return stations
 }
 
+func (sd *staticData) Routes(lineID string) []Route {
+	resp := make(chan []Route, 1)
+	req := routeRequest{lineID: lineID, resp: resp}
+	select {
+	case sd.routeRequests <- req:
+		return <-resp
+	case <-time.After(time.Second * 5):
+		log.Printf("timeout waiting for remote request (routes fetch)... processing one-off")
+	}
+	routes, err := sd.fetcher.fetchRoutes(lineID)
+	if err != nil {
+		log.Printf("ERROR fetching routes during one-off: %v", err)
+		return []Route{}
+	}
+	return routes
+}
+
 type staticFetcher struct {
 	c           http.Client
 	linesURL    func() string
 	stationsURL func(string) string
+	routesURL   func(string) string
 	statusURL   func() string
 }
 
@@ -194,6 +245,9 @@ func newStaticFetcher() *staticFetcher {
 		},
 		stationsURL: func(lineID string) string {
 			return fmt.Sprintf(LineStationsAPI, lineID)
+		},
+		routesURL: func(lineID string) string {
+			return fmt.Sprintf(LineStationSequenceAPI, lineID)
 		},
 		statusURL: func() string {
 			return LineStatusAPI
@@ -281,6 +335,62 @@ func (sf *staticFetcher) fetchStation(lineID string) ([]Station, error) {
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name
 	})
+	return result, nil
+}
+
+type tflRouteSequence struct {
+	OrderedLineRoutes []tflLineRoute
+}
+
+type tflLineRoute struct {
+	Name      string
+	NaptanIds []string
+}
+
+func (sf *staticFetcher) fetchRoutes(lineID string) ([]Route, error) {
+	// Get stations first and create a hashmap
+	allStations, err := sf.fetchStation(lineID)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching stations while fetching routes: %v", err)
+	}
+	stationsMap := make(map[string]Station)
+	for _, s := range allStations {
+		stationsMap[s.ID] = s
+	}
+
+	// Now move on to routes
+	url := sf.routesURL(lineID)
+	resp, err := sf.c.Get(url)
+	if err != nil {
+		return []Route{}, fmt.Errorf("problem fetching routes data for %s from API: %v", lineID, err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []Route{}, fmt.Errorf("problem reading routes data for %s from response: %v", lineID, err)
+	}
+	routeSequence := tflRouteSequence{}
+	if err := json.Unmarshal(body, &routeSequence); err != nil {
+		return []Route{}, fmt.Errorf("problem parsing routes data response data for %s from TFL: %v", lineID, err)
+	}
+
+	// Prepare final output
+	result := make([]Route, 0, len(routeSequence.OrderedLineRoutes))
+	for _, olr := range routeSequence.OrderedLineRoutes {
+		stations := make([]Station, 0, len(olr.NaptanIds))
+		for _, stationID := range olr.NaptanIds {
+			station, ok := stationsMap[stationID]
+			if !ok {
+				log.Printf("station with ID %s found in route %s but not in collection", stationID, olr.Name)
+				continue
+			}
+			stations = append(stations, station)
+		}
+		result = append(result, Route{
+			Name:     olr.Name,
+			Stations: stations,
+		})
+	}
 	return result, nil
 }
 
