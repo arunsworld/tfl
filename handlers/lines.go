@@ -15,29 +15,13 @@ func (h handlers) registerLinesHandler() {
 			handleEmptyLines(w, h.tmpls)
 			return
 		}
-		err := h.tmpls.ExecuteTemplate(w, "lines.html", splitLinesIntoTabularFormat(lines))
+		err := h.tmpls.ExecuteTemplate(w, "lines.html", splitIntoTabularFormat(lines, 3))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html")
 	})
-}
-
-func splitLinesIntoTabularFormat(lines []tfl.Line) [][]interface{} {
-	rowSplitThreshold := 3
-	currentRow := 0
-	result := [][]any{
-		{},
-	}
-	for _, l := range lines {
-		if len(result[currentRow]) == rowSplitThreshold {
-			result = append(result, []any{})
-			currentRow++
-		}
-		result[currentRow] = append(result[currentRow], l)
-	}
-	return result
 }
 
 func handleEmptyLines(w http.ResponseWriter, tmpls *template.Template) {
