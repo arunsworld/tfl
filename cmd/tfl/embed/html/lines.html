@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="/static/bootstrap-5.0.2-dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Lines</title>
+
+    <style>
+        .main {
+                margin-top: 50px;
+            }
+        .limited-height {
+            max-height: 150px;
+            overflow: scroll;
+        }
+        .station-link:hover {
+            color: inherit;
+        }
+        .bakerloo {
+            background-color: #B36305;
+            color: white;
+        }
+        .central {
+            background-color: #E32017;
+            color: white;
+        }
+        .circle {
+            background-color: #FFD300;
+            color: black;
+        }
+        .district {
+            background-color: #00782A;
+            color: white;
+        }
+        .hammersmith-city {
+            background-color: #F3A9BB;
+            color: black;
+        }
+        .jubilee {
+            background-color: #A0A5A9;
+            color: black;
+        }
+        .metropolitan {
+            background-color: #9B0056;
+            color: white;
+        }
+        .northern {
+            background-color: #000000;
+            color: white;
+        }
+        .piccadilly {
+            background-color: #003688;
+            color: white;
+        }
+        .victoria {
+            background-color: #0098D4;
+            color: white;
+        }
+        .waterloo-city {
+            background-color: #95CDBA;
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container main">
+        [[range .]]
+        <div class="row">
+            [[range .]]
+            <div class="col-sm-4 mb-3">
+                <div class="card [[.ID]]">
+                    <div class="card-body">
+                        <h5 class="card-title"><a href="/stations/[[.ID]]" class="[[.ID]] station-link">[[.Name]]</a></h5>
+                        <ul>
+                            [[range .Status.StatusDescriptions]]
+                            <li>[[.]]</li>
+                            [[end]]
+                        </ul>
+                        <!--
+                        <ul class="limited-height">
+                            [[range .Routes]]
+                            <li>[[.]]</li>
+                            [[end]]
+                        </ul>
+                        -->
+                    </div>
+                </div>
+            </div>
+            [[end]]
+        </div>
+        [[end]]
+        <div class="row justify-content-center">
+            <div class="col-sm-6">
+                <p class="fw-lighter text-center">This website uses NO cookies, does not track you and has no ads.</p>
+                <p class="fw-lighter text-center">All data grabbed from tfl.gov.uk public APIs.</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

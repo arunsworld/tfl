@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="/static/bootstrap-5.0.2-dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Vehicle Tracking</title>
+
+    <style>
+        .main {
+                margin-top: 50px;
+            }
+            .above {
+            z-index: 1;
+        }
+        .start-5 {
+            left: 5%!important;
+        }
+        .bakerloo {
+            background-color: #B36305;
+            color: white;
+        }
+        .central {
+            background-color: #E32017;
+            color: white;
+        }
+        .circle {
+            background-color: #FFD300;
+            color: black;
+        }
+        .district {
+            background-color: #00782A;
+            color: white;
+        }
+        .hammersmith-city {
+            background-color: #F3A9BB;
+            color: black;
+        }
+        .jubilee {
+            background-color: #A0A5A9;
+            color: black;
+        }
+        .metropolitan {
+            background-color: #9B0056;
+            color: white;
+        }
+        .northern {
+            background-color: #000000;
+            color: white;
+        }
+        .piccadilly {
+            background-color: #003688;
+            color: white;
+        }
+        .victoria {
+            background-color: #0098D4;
+            color: white;
+        }
+        .waterloo-city {
+            background-color: #95CDBA;
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container main">
+        <div class="row justify-content-center">
+            <div class="col-sm-6 position-relative">
+                <span class="position-absolute top-10 start-5 translate-middle rounded-circle [[.LineID]] p-3 above"><span class="visually-hidden">tube line identifer</span></span>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="float-end">
+                            <a href="/vehicles/[[.LineID]]/[[.VehicleSchedule.VehicleID]]" class="btn btn-primary">Refresh</a>
+                        </div>
+                        <h5 class="card-title text-success">[[.VehicleSchedule.CurrentLocation]]</h5>
+                        <p class="card-subtitle mb-2 text-muted">[[.VehicleSchedule.Line]] to [[.VehicleSchedule.Destination]]</p>
+                        <p class="card-subtitle mb-2 text-muted"><span class="text-danger">⚠</span> TFL does not provide consistent vehicle info. Updates may suddenly dissappear.</p>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Station</th>
+                                    <th scope="col">ETA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                [[range .VehicleSchedule.Stops]]
+                                <tr>
+                                    <td><a href="/stations/[[$.LineID]]/[[.StationID]]" target="_blank">[[.StationName]]</a></td>
+                                    <td>[[.ETA]]</td>
+                                </tr>
+                                [[end]]
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

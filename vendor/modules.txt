@@ -1,0 +1,6 @@
+# github.com/gorilla/mux v1.8.0
+## explicit; go 1.12
+github.com/gorilla/mux
+# github.com/unrolled/logger v0.0.0-20201216141554-31a3694fe979
+## explicit; go 1.15
+github.com/unrolled/logger

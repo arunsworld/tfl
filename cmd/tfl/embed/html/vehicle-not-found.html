@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="/static/bootstrap-5.0.2-dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Vehicle Tracking</title>
+
+    <style>
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">No data avalable for vehicle: [[.VehicleID]]</h5>
+                    <p class="card-text">This may be temporary.
+                        <a href="/vehicles/[[.LineID]]/[[.VehicleID]]" class="btn btn-primary">Try Again</a>
+                    </p>
+                    <p class="card-text">
+                        <a href="/stations/[[.LineID]]" class="btn btn-primary">All Stations List</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
