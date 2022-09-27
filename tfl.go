@@ -31,6 +31,7 @@ type Status struct {
 }
 
 type Route struct {
+	ID       string
 	Name     string
 	Stations []Station
 }
@@ -376,7 +377,7 @@ func (sf *staticFetcher) fetchRoutes(lineID string) ([]Route, error) {
 
 	// Prepare final output
 	result := make([]Route, 0, len(routeSequence.OrderedLineRoutes))
-	for _, olr := range routeSequence.OrderedLineRoutes {
+	for i, olr := range routeSequence.OrderedLineRoutes {
 		stations := make([]Station, 0, len(olr.NaptanIds))
 		for _, stationID := range olr.NaptanIds {
 			station, ok := stationsMap[stationID]
@@ -387,6 +388,7 @@ func (sf *staticFetcher) fetchRoutes(lineID string) ([]Route, error) {
 			stations = append(stations, station)
 		}
 		result = append(result, Route{
+			ID:       fmt.Sprintf("%sroute%d", lineID, i),
 			Name:     olr.Name,
 			Stations: stations,
 		})

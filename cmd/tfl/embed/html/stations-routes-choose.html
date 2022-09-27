@@ -83,19 +83,32 @@
                         </div>
                         <h5 class="card-title">[[.LineName]] Line</h5>
                         <p class="card-subtitle mb-2 text-muted">Select a station for real-time updates.</p>
-                        [[range .Routes]]
-                        <h5 class="card-title">[[.Name]]</h5>
-                        <ul>
-                            [[range .Stations]]
-                            <li><a href="/stations/[[$.LineID]]/[[.ID]]">[[.Name]]</a></li>
+                        <div class="accordion" id="routes">
+                            [[range .Routes]]
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#[[.ID]]">
+                                        [[.Name]]
+                                    </button>
+                                </h2>
+                                <div id="[[.ID]]" class="accordion-collapse collapse" data-bs-parent="#routes">
+                                    <div class="accordion-body">
+                                        <ul>
+                                            [[range .Stations]]
+                                            <li><a href="/stations/[[$.LineID]]/[[.ID]]" target="_blank">[[.Name]]</a></li>
+                                            [[end]]
+                                        </ul>
+                                    </div>
+                                  </div>
+                            </div>
                             [[end]]
-                        </ul>
-                        [[end]]
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script src="/static/bootstrap-5.0.2-dist/js/bootstrap.min.js"></script>
 </body>
 
 </html>
