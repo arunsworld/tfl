@@ -68,11 +68,7 @@ func (sd *staticData) monitorLineFetch() {
 	linesFetched := false
 	for req := range sd.lineRequests {
 		if linesFetched {
-			if req.lineID == "" {
-				req.resp <- lines
-			} else {
-				req.resp <- []Line{linesCache[req.lineID]}
-			}
+			respondToLineRequest(req, lines, linesCache)
 			continue
 		}
 		_lines, err := sd.fetcher.fetchLines()
@@ -82,11 +78,19 @@ func (sd *staticData) monitorLineFetch() {
 			continue
 		}
 		lines = _lines
-		linesFetched = true
 		for _, l := range lines {
 			linesCache[l.ID] = l
 		}
+		linesFetched = true
+		respondToLineRequest(req, lines, linesCache)
+	}
+}
+
+func respondToLineRequest(req lineRequest, lines []Line, linesCache map[string]Line) {
+	if req.lineID == "" {
 		req.resp <- lines
+	} else {
+		req.resp <- []Line{linesCache[req.lineID]}
 	}
 }
 
@@ -152,7 +156,7 @@ func (sd *staticData) LineDetails(lineID string) Line {
 		v := <-resp
 		return v[0]
 	case <-time.After(time.Second * 5):
-		log.Printf("timeout waiting for remote request (line details fetch)... processing one-off")
+		log.Printf("timeout waiting for remote request (line details fetch)... aborting")
 	}
 	return Line{}
 }
