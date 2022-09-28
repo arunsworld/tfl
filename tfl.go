@@ -14,7 +14,7 @@ import (
 var TFLStaticDataGlobal TFLStaticData = newStaticData()
 
 type TFLStaticData interface {
-	Lines() []Line
+	Lines(string) []Line
 	LineDetails(string) Line
 	Stations(string) []Station
 	Routes(string) []Route
@@ -23,7 +23,6 @@ type TFLStaticData interface {
 type Line struct {
 	ID     string
 	Name   string
-	Routes []string
 	Status Status
 }
 
@@ -51,6 +50,7 @@ type staticData struct {
 }
 
 type lineRequest struct {
+	mode   string
 	lineID string
 	resp   chan []Line
 }
@@ -79,26 +79,31 @@ func newStaticData() *staticData {
 }
 
 func (sd *staticData) monitorLineFetch() {
-	lines := []Line{}
+	lines := map[string][]Line{}
 	linesCache := make(map[string]Line)
-	linesFetched := false
 	for req := range sd.lineRequests {
-		if linesFetched {
-			respondToLineRequest(req, lines, linesCache)
+		mode := req.mode
+		// if no mode was sent, then we're probably just looking for some info that might be in the cache
+		if mode == "" {
+			respondToLineRequest(req, []Line{}, linesCache)
 			continue
 		}
-		_lines, err := sd.fetcher.fetchLines()
+		linesForMode, ok := lines[mode]
+		if ok {
+			respondToLineRequest(req, linesForMode, linesCache)
+			continue
+		}
+		_lines, err := sd.fetcher.fetchLines(req.mode)
 		if err != nil {
 			log.Printf("ERROR fetching lines: %v", err)
 			req.resp <- []Line{}
 			continue
 		}
-		lines = _lines
-		for _, l := range lines {
+		lines[mode] = _lines
+		for _, l := range _lines {
 			linesCache[l.ID] = l
 		}
-		linesFetched = true
-		respondToLineRequest(req, lines, linesCache)
+		respondToLineRequest(req, _lines, linesCache)
 	}
 }
 
@@ -155,12 +160,12 @@ func (sd *staticData) monitorRouteFetch() {
 	}
 }
 
-func (sd *staticData) Lines() []Line {
-	lines := sd.lines()
+func (sd *staticData) Lines(mode string) []Line {
+	lines := sd.lines(mode)
 	if len(lines) == 0 {
 		return lines
 	}
-	statuses, err := sd.fetcher.fetchStatus()
+	statuses, err := sd.fetcher.fetchStatus(mode)
 	if err != nil {
 		log.Printf("error getting status: %v", err)
 		return lines
@@ -173,16 +178,16 @@ func (sd *staticData) Lines() []Line {
 	return result
 }
 
-func (sd *staticData) lines() []Line {
+func (sd *staticData) lines(mode string) []Line {
 	resp := make(chan []Line, 1)
-	req := lineRequest{resp: resp}
+	req := lineRequest{resp: resp, mode: mode}
 	select {
 	case sd.lineRequests <- req:
 		return <-resp
 	case <-time.After(time.Second * 5):
 		log.Printf("timeout waiting for remote request (line fetch)... processing one-off")
 	}
-	lines, err := sd.fetcher.fetchLines()
+	lines, err := sd.fetcher.fetchLines(mode)
 	if err != nil {
 		log.Printf("ERROR fetching lines during one-off: %v", err)
 		return []Line{}
@@ -239,10 +244,10 @@ func (sd *staticData) Routes(lineID string) []Route {
 
 type staticFetcher struct {
 	c             http.Client
-	linesURL      func() string
+	linesURL      func(string) string
 	stationsURL   func(string) string
 	routesURL     func(string) string
-	statusURL     func() string
+	statusURL     func(string) string
 	statusByIDURL func([]string) string
 }
 
@@ -250,8 +255,8 @@ func newStaticFetcher() *staticFetcher {
 	c := http.Client{Timeout: time.Duration(5) * time.Second}
 	return &staticFetcher{
 		c: c,
-		linesURL: func() string {
-			return LineRoutesAPI
+		linesURL: func(mode string) string {
+			return fmt.Sprintf(LineRoutesAPI, mode)
 		},
 		stationsURL: func(lineID string) string {
 			return fmt.Sprintf(LineStationsAPI, lineID)
@@ -259,8 +264,8 @@ func newStaticFetcher() *staticFetcher {
 		routesURL: func(lineID string) string {
 			return fmt.Sprintf(LineStationSequenceAPI, lineID)
 		},
-		statusURL: func() string {
-			return LineStatusAPI
+		statusURL: func(mode string) string {
+			return fmt.Sprintf(LineStatusAPI, mode)
 		},
 		statusByIDURL: func(ids []string) string {
 			return fmt.Sprintf(LineStatusByIDAPI, strings.Join(ids, ","))
@@ -269,25 +274,16 @@ func newStaticFetcher() *staticFetcher {
 }
 
 type tflLine struct {
-	ID            string
-	Name          string
-	RouteSections []routeSection
+	ID   string
+	Name string
 }
 
 type routeSection struct {
 	Name string
 }
 
-func (tl tflLine) routeSectionsAsList() []string {
-	result := make([]string, 0, len(tl.RouteSections))
-	for _, rs := range tl.RouteSections {
-		result = append(result, rs.Name)
-	}
-	return result
-}
-
-func (sf *staticFetcher) fetchLines() ([]Line, error) {
-	url := sf.linesURL()
+func (sf *staticFetcher) fetchLines(mode string) ([]Line, error) {
+	url := sf.linesURL(mode)
 	resp, err := sf.c.Get(url)
 	if err != nil {
 		return []Line{}, fmt.Errorf("problem fetching lines data from API: %v", err)
@@ -304,9 +300,8 @@ func (sf *staticFetcher) fetchLines() ([]Line, error) {
 	result := make([]Line, 0, len(tflLines))
 	for _, tflLine := range tflLines {
 		result = append(result, Line{
-			ID:     tflLine.ID,
-			Name:   tflLine.Name,
-			Routes: tflLine.routeSectionsAsList(),
+			ID:   tflLine.ID,
+			Name: tflLine.Name,
 		})
 	}
 	sort.Slice(result, func(i, j int) bool {
@@ -430,8 +425,8 @@ func (s tflStatus) statusDescriptions() []string {
 	return result
 }
 
-func (sf *staticFetcher) fetchStatus() (map[string]Status, error) {
-	url := sf.statusURL()
+func (sf *staticFetcher) fetchStatus(mode string) (map[string]Status, error) {
+	url := sf.statusURL(mode)
 	resp, err := sf.c.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("problem fetching status data from API: %v", err)

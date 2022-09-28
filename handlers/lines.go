@@ -5,12 +5,18 @@ import (
 	"text/template"
 
 	"github.com/arunsworld/tfl"
+	"github.com/gorilla/mux"
 )
 
 func (h handlers) registerLinesHandler() {
 	linesGET := h.handler.PathPrefix("/lines/").Methods("GET").Subrouter()
 	linesGET.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		lines := tfl.TFLStaticDataGlobal.Lines()
+		http.Redirect(w, r, "/lines/tube", 302)
+	})
+	linesGET.HandleFunc("/{mode}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		mode := vars["mode"]
+		lines := tfl.TFLStaticDataGlobal.Lines(mode)
 		if len(lines) == 0 {
 			handleEmptyLines(w, h.tmpls)
 			return
