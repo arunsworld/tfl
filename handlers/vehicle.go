@@ -105,6 +105,13 @@ type vehicleSchedule struct {
 	Stops           []stop
 }
 
+func (vs vehicleSchedule) CleansedCurrentLocation() string {
+	if vs.CurrentLocation == "" {
+		return "Current Location Not Specified"
+	}
+	return vs.CurrentLocation
+}
+
 type stop struct {
 	StationID       string
 	StationName     string

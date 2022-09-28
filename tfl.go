@@ -15,7 +15,7 @@ var TFLStaticDataGlobal TFLStaticData = newStaticData()
 
 type TFLStaticData interface {
 	Lines(string) []Line
-	LineDetails(string) Line
+	LineDetails(string, string) Line
 	Stations(string) []Station
 	Routes(string) []Route
 }
@@ -83,11 +83,6 @@ func (sd *staticData) monitorLineFetch() {
 	linesCache := make(map[string]Line)
 	for req := range sd.lineRequests {
 		mode := req.mode
-		// if no mode was sent, then we're probably just looking for some info that might be in the cache
-		if mode == "" {
-			respondToLineRequest(req, []Line{}, linesCache)
-			continue
-		}
 		linesForMode, ok := lines[mode]
 		if ok {
 			respondToLineRequest(req, linesForMode, linesCache)
@@ -195,12 +190,26 @@ func (sd *staticData) lines(mode string) []Line {
 	return lines
 }
 
-func (sd *staticData) LineDetails(lineID string) Line {
+func (sd *staticData) LineDetails(mode, lineID string) Line {
+	if lineID == "" {
+		log.Printf("WARNING: LineDetails called without lineID")
+		return Line{}
+	}
+	if mode == "" {
+		log.Printf("WARNING: LineDetails called without mode")
+		return Line{
+			ID:   lineID,
+			Name: lineID,
+		}
+	}
 	resp := make(chan []Line, 1)
-	req := lineRequest{resp: resp, lineID: lineID}
+	req := lineRequest{resp: resp, mode: mode, lineID: lineID}
 	select {
 	case sd.lineRequests <- req:
 		v := <-resp
+		if len(v) != 1 {
+			return Line{}
+		}
 		return v[0]
 	case <-time.After(time.Second * 5):
 		log.Printf("timeout waiting for remote request (line details fetch)... aborting")

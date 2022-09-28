@@ -60,12 +60,13 @@ func (af *arrivalsFetcher) arrivalsFor(lineID, stationID string) (arrivals, erro
 func (af *arrivalsFetcher) calculateArrivalsByPlatform(arrivals []tflStationArrival) []platform {
 	buffer := make(map[string]*platform)
 	for _, arr := range arrivals {
-		pform, ok := buffer[arr.PlatformName]
+		platformName := arr.cleansedPlatformName()
+		pform, ok := buffer[platformName]
 		if !ok {
 			pform = &platform{
-				Name: arr.PlatformName,
+				Name: platformName,
 			}
-			buffer[arr.PlatformName] = pform
+			buffer[platformName] = pform
 		}
 		pform.Arrivals = append(pform.Arrivals, arrival{
 			VehicleID:       arr.VehicleId,
@@ -114,6 +115,13 @@ func (tsa tflStationArrival) calculateCurrentLocation() string {
 	return "Not Available"
 }
 
+func (tsa tflStationArrival) cleansedPlatformName() string {
+	if tsa.PlatformName == "" || tsa.PlatformName == "null" {
+		return "Platform Not Specified"
+	}
+	return tsa.PlatformName
+}
+
 type arrivals struct {
 	StationID   string
 	StationName string
@@ -144,23 +152,26 @@ func (a arrival) ETA() string {
 func (h handlers) registerStationsHandler() {
 	stationsGET := h.handler.PathPrefix("/stations/").Methods("GET").Subrouter()
 	af := newArrivalsFetcher()
-	stationsGET.HandleFunc("/{line_id}/{station_id}", func(w http.ResponseWriter, r *http.Request) {
+	stationsGET.HandleFunc("/{mode}/{line_id}/{station_id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
+		mode := vars["mode"]
 		lineID := vars["line_id"]
 		stationID := vars["station_id"]
 		avls, err := af.arrivalsFor(lineID, stationID)
 		if err != nil {
-			handleStationDataRetreivalError(w, h.tmpls, lineID, stationID, err.Error())
+			handleStationDataRetreivalError(w, h.tmpls, mode, lineID, stationID, err.Error())
 			return
 		}
 		if avls.StationID == "" {
-			handleStationDataNotFound(w, h.tmpls, lineID, stationID)
+			handleStationDataNotFound(w, h.tmpls, mode, lineID, stationID)
 			return
 		}
 		err = h.tmpls.ExecuteTemplate(w, "stations-arrival.html", struct {
+			Mode     string
 			LineID   string
 			Arrivals arrivals
 		}{
+			Mode:     mode,
 			LineID:   lineID,
 			Arrivals: avls,
 		})
@@ -170,16 +181,19 @@ func (h handlers) registerStationsHandler() {
 		}
 		w.Header().Set("Content-Type", "text/html")
 	})
-	stationsGET.HandleFunc("/{line_id}", func(w http.ResponseWriter, r *http.Request) {
+	stationsGET.HandleFunc("/{mode}/{line_id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
+		mode := vars["mode"]
 		lineID := vars["line_id"]
 		routes := tfl.TFLStaticDataGlobal.Routes(lineID)
-		lineDetails := tfl.TFLStaticDataGlobal.LineDetails(lineID)
+		lineDetails := tfl.TFLStaticDataGlobal.LineDetails(mode, lineID)
 		err := h.tmpls.ExecuteTemplate(w, "stations-routes-choose.html", struct {
+			Mode     string
 			LineID   string
 			LineName string
 			Routes   []tfl.Route
 		}{
+			Mode:     mode,
 			LineID:   lineID,
 			LineName: lineDetails.Name,
 			Routes:   routes,
@@ -192,12 +206,14 @@ func (h handlers) registerStationsHandler() {
 	})
 }
 
-func handleStationDataRetreivalError(w http.ResponseWriter, tmpls *template.Template, lid, sid string, errMsg string) {
+func handleStationDataRetreivalError(w http.ResponseWriter, tmpls *template.Template, mode, lid, sid string, errMsg string) {
 	err := tmpls.ExecuteTemplate(w, "station-error.html", struct {
+		Mode      string
 		LineID    string
 		StationID string
 		Error     string
 	}{
+		Mode:      mode,
 		LineID:    lid,
 		StationID: sid,
 		Error:     errMsg,
@@ -209,13 +225,15 @@ func handleStationDataRetreivalError(w http.ResponseWriter, tmpls *template.Temp
 	w.Header().Set("Content-Type", "text/html")
 }
 
-func handleStationDataNotFound(w http.ResponseWriter, tmpls *template.Template, lid, sid string) {
+func handleStationDataNotFound(w http.ResponseWriter, tmpls *template.Template, mode, lid, sid string) {
 	err := tmpls.ExecuteTemplate(w, "station-not-found.html", struct {
-		StationID string
+		Mode      string
 		LineID    string
+		StationID string
 	}{
-		StationID: sid,
+		Mode:      mode,
 		LineID:    lid,
+		StationID: sid,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

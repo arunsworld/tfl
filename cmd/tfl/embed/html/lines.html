@@ -24,13 +24,13 @@
 
 <body>
     <div class="container main">
-        [[range .]]
+        [[range .Lines]]
         <div class="row">
             [[range .]]
             <div class="col-sm-4 mb-3">
                 <div class="card [[.ID]]">
                     <div class="card-body">
-                        <h5 class="card-title"><a href="/stations/[[.ID]]" class="[[.ID]] station-link">[[.Name]]</a></h5>
+                        <h5 class="card-title"><a href="/stations/[[$.Mode]]/[[.ID]]" class="[[.ID]] station-link">[[.Name]]</a></h5>
                         <ul>
                             [[range .Status.StatusDescriptions]]
                             <li>[[.]]</li>

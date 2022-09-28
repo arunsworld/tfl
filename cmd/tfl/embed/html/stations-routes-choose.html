@@ -36,7 +36,7 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="float-end">
-                            <a href="/lines/" class="btn btn-primary">All Lines</a>
+                            <a href="/lines/[[.Mode]]" class="btn btn-primary">All Lines</a>
                         </div>
                         <h5 class="card-title">[[.LineName]] Line</h5>
                         <p class="card-subtitle mb-2 text-muted">Select a station for real-time updates.</p>
@@ -52,7 +52,7 @@
                                     <div class="accordion-body">
                                         <ul>
                                             [[range .Stations]]
-                                            <li><a href="/stations/[[$.LineID]]/[[.ID]]" target="_blank">[[.Name]]</a></li>
+                                            <li><a href="/stations/[[$.Mode]]/[[$.LineID]]/[[.ID]]" target="_blank">[[.Name]]</a></li>
                                             [[end]]
                                         </ul>
                                     </div>

@@ -21,7 +21,13 @@ func (h handlers) registerLinesHandler() {
 			handleEmptyLines(w, h.tmpls)
 			return
 		}
-		err := h.tmpls.ExecuteTemplate(w, "lines.html", splitIntoTabularFormat(lines, 3))
+		err := h.tmpls.ExecuteTemplate(w, "lines.html", struct {
+			Mode  string
+			Lines [][]tfl.Line
+		}{
+			Mode:  mode,
+			Lines: splitIntoTabularFormat(lines, 3),
+		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
