@@ -400,7 +400,7 @@ func (sf *staticFetcher) fetchRoutes(lineID string) ([]Route, error) {
 			stations = append(stations, station)
 		}
 		result = append(result, Route{
-			ID:       fmt.Sprintf("%sroute%d", lineID, i),
+			ID:       fmt.Sprintf("route%s%d", lineID, i),
 			Name:     olr.Name,
 			Stations: stations,
 		})

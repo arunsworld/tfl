@@ -23,8 +23,8 @@ func neuter(next http.Handler) http.Handler {
 		// 	return
 		// }
 
-		// w.Header().Set("Last-Modified", cacheSince)
-		// w.Header().Set("Expires", cacheUntil)
+		w.Header().Set("Last-Modified", cacheSince)
+		w.Header().Set("Expires", cacheUntil)
 
 		next.ServeHTTP(w, r)
 	})
