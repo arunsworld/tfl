@@ -166,14 +166,19 @@ func (h handlers) registerStationsHandler() {
 			handleStationDataNotFound(w, h.tmpls, mode, lineID, stationID)
 			return
 		}
+		// check if we want vehicle data displayed
+		queryParams := r.URL.Query()
+		_, showVehicleInfo := queryParams["v"]
 		err = h.tmpls.ExecuteTemplate(w, "stations-arrival.html", struct {
-			Mode     string
-			LineID   string
-			Arrivals arrivals
+			Mode            string
+			LineID          string
+			Arrivals        arrivals
+			ShowVehicleInfo bool
 		}{
-			Mode:     mode,
-			LineID:   lineID,
-			Arrivals: avls,
+			Mode:            mode,
+			LineID:          lineID,
+			Arrivals:        avls,
+			ShowVehicleInfo: showVehicleInfo,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

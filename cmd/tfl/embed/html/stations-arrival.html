@@ -54,7 +54,11 @@
                                 <tr>
                                     <td>[[.Towards]]</td>
                                     [[if .CanBeTracked]]
-                                    <td><a href="/vehicles/[[$.LineID]]/[[.VehicleID]]" target="_blank">[[.CurrentLocation]]</a></td>
+                                    <td><a href="/vehicles/[[$.LineID]]/[[.VehicleID]]" target="_blank">[[.CurrentLocation]]</a>
+                                        [[if $.ShowVehicleInfo]]
+                                        [[.VehicleID]]
+                                        [[end]]
+                                    </td>
                                     [[else]]
                                     <td>[[.CurrentLocation]]</td>
                                     [[end]]
