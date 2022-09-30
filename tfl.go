@@ -423,12 +423,18 @@ type tflLineStatus struct {
 }
 
 func (s tflStatus) statusDescriptions() []string {
+	dupStatusChecker := map[string]struct{}{}
 	result := make([]string, 0, len(s.LineStatuses))
 	for _, v := range s.LineStatuses {
+		var status string
 		if v.Reason == "" {
-			result = append(result, v.StatusSeverityDescription)
+			status = v.StatusSeverityDescription
 		} else {
-			result = append(result, v.Reason)
+			status = v.Reason
+		}
+		if _, alreadyNoted := dupStatusChecker[status]; !alreadyNoted {
+			result = append(result, status)
+			dupStatusChecker[status] = struct{}{}
 		}
 	}
 	return result
