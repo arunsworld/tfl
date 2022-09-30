@@ -39,8 +39,8 @@
                             <a href="/lines/[[.Mode]]" class="btn btn-primary">All Lines</a>
                         </div>
                         <h5 class="card-title">[[.LineName]] Line</h5>
-                        <p class="card-subtitle mb-2 text-muted">Select a station for real-time updates.</p>
-                        <div class="accordion" id="routes">
+                        <p class="card-subtitle mb-2 text-muted">[[.NextNav.Subtitle]]</p>
+                        <div class="accordion mb-3" id="routes">
                             [[range .Routes]]
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
@@ -52,13 +52,16 @@
                                     <div class="accordion-body">
                                         <ul>
                                             [[range .Stations]]
-                                            <li><a href="/[[$.Navigation]]/[[$.Mode]]/[[$.LineID]]/[[.ID]]" target="_blank">[[.Name]]</a></li>
+                                            <li><a href="/[[$.NextNav.Navigation]]/[[$.Mode]]/[[$.LineID]]/[[.ID]]" target="_blank">[[.Name]]</a></li>
                                             [[end]]
                                         </ul>
                                     </div>
                                   </div>
                             </div>
                             [[end]]
+                        </div>
+                        <div>
+                            <a href="/routes/[[.Mode]]/[[.LineID]]?[[.NextNav.SwitchParam]]" class="btn btn-primary">[[.NextNav.SwitchMsg]]</a>
                         </div>
                     </div>
                 </div>

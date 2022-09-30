@@ -8,6 +8,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type nextNav struct {
+	Navigation  string
+	Subtitle    string
+	SwitchMsg   string
+	SwitchParam string
+}
+
 func (h handlers) registerRoutesHandler() {
 	routesGET := h.handler.PathPrefix("/routes/").Methods("GET").Subrouter()
 	routesGET.HandleFunc("/{mode}/{line_id}", func(w http.ResponseWriter, r *http.Request) {
@@ -16,19 +23,37 @@ func (h handlers) registerRoutesHandler() {
 		lineID := vars["line_id"]
 		routes := tfl.TFLStaticDataGlobal.Routes(lineID)
 		lineDetails := tfl.TFLStaticDataGlobal.LineDetails(mode, lineID)
-		navigation := "arrivals"
+		// check if for arrivals or timetable
+		var nn nextNav
+		queryParams := r.URL.Query()
+		_, ok := queryParams["timetables"]
+		if ok {
+			nn = nextNav{
+				Navigation:  "timetables",
+				Subtitle:    "Select a station for it's timetable.",
+				SwitchMsg:   "Switch to Arrivals",
+				SwitchParam: "arrivals",
+			}
+		} else {
+			nn = nextNav{
+				Navigation:  "arrivals",
+				Subtitle:    "Select a station for real-time arrival updates.",
+				SwitchMsg:   "Switch to Timetables",
+				SwitchParam: "timetables",
+			}
+		}
 		err := h.tmpls.ExecuteTemplate(w, "routes.html", struct {
-			Mode       string
-			LineID     string
-			LineName   string
-			Routes     []tfl.Route
-			Navigation string
+			Mode     string
+			LineID   string
+			LineName string
+			Routes   []tfl.Route
+			NextNav  nextNav
 		}{
-			Mode:       mode,
-			LineID:     lineID,
-			LineName:   lineDetails.Name,
-			Routes:     routes,
-			Navigation: navigation,
+			Mode:     mode,
+			LineID:   lineID,
+			LineName: lineDetails.Name,
+			Routes:   routes,
+			NextNav:  nn,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
