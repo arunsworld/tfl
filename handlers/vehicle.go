@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"sort"
-	"text/template"
 	"time"
 
 	"github.com/arunsworld/tfl"

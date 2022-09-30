@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"html/template"
 	"net/http"
-	"text/template"
 
 	"github.com/arunsworld/tfl"
 	"github.com/gorilla/mux"

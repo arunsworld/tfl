@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"html/template"
 	"net/http"
-	"text/template"
 
 	"io/fs"
 
@@ -14,11 +14,12 @@ func RegisterHandlers(handler *mux.Router, static fs.FS, templates fs.FS) {
 	h := handlers{
 		handler: handler,
 	}
-	tmpls, err := template.New("").Delims("[[", "]]").ParseFS(templates, "*.html")
-	if err != nil {
-		panic(err)
-	}
-	h.tmpls = tmpls
+	tmpls := template.New("").Delims("[[", "]]").Funcs(template.FuncMap{
+		"htmlSafe": func(v string) template.HTML {
+			return template.HTML(v)
+		},
+	})
+	h.tmpls = template.Must(tmpls.ParseFS(templates, "*.html"))
 
 	l := logger.New()
 	handler.Use(l.Handler)
