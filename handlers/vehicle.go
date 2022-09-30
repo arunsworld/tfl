@@ -37,8 +37,16 @@ var gmtc = newGMTConverter()
 func (h handlers) registerVehicleHandler() {
 	vTracker := newVechicleTracker()
 	vechicleGET := h.handler.PathPrefix("/vehicles/").Methods("GET").Subrouter()
+	// For temporary backwards compatibility - assume tube
 	vechicleGET.HandleFunc("/{line_id}/{vehicle_id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
+		lineID := vars["line_id"]
+		vehicleID := vars["vehicle_id"]
+		http.Redirect(w, r, fmt.Sprintf("/vehicles/tube/%s/%s", lineID, vehicleID), 302)
+	})
+	vechicleGET.HandleFunc("/{mode}/{line_id}/{vehicle_id}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		mode := vars["mode"]
 		lineID := vars["line_id"]
 		vehicleID := vars["vehicle_id"]
 		vs, err := vTracker.scheduleFor(lineID, vehicleID)
@@ -51,9 +59,11 @@ func (h handlers) registerVehicleHandler() {
 			return
 		}
 		err = h.tmpls.ExecuteTemplate(w, "vehicles.html", struct {
+			Mode            string
 			LineID          string
 			VehicleSchedule vehicleSchedule
 		}{
+			Mode:            mode,
 			LineID:          lineID,
 			VehicleSchedule: vs,
 		})
