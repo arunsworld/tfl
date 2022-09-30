@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -149,8 +148,8 @@ func (a arrival) ETA() string {
 	return fmt.Sprintf("%s (%s)", gmtc.convert(a.ExpectedArrival).Format("15:04"), a.TimeToStation)
 }
 
-func (h handlers) registerStationsHandler() {
-	stationsGET := h.handler.PathPrefix("/stations/").Methods("GET").Subrouter()
+func (h handlers) registerArrivalsHandler() {
+	stationsGET := h.handler.PathPrefix("/arrivals/").Methods("GET").Subrouter()
 	af := newArrivalsFetcher()
 	stationsGET.HandleFunc("/{mode}/{line_id}/{station_id}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -159,7 +158,7 @@ func (h handlers) registerStationsHandler() {
 		stationID := vars["station_id"]
 		avls, err := af.arrivalsFor(lineID, stationID)
 		if err != nil {
-			handleStationDataRetreivalError(w, h.tmpls, mode, lineID, stationID, err.Error())
+			handleStationDataRetreivalError(w, h.tmpls, mode, lineID, stationID, "arrivals", err.Error())
 			return
 		}
 		if avls.StationID == "" {
@@ -169,7 +168,7 @@ func (h handlers) registerStationsHandler() {
 		// check if we want vehicle data displayed
 		queryParams := r.URL.Query()
 		_, showVehicleInfo := queryParams["v"]
-		err = h.tmpls.ExecuteTemplate(w, "stations-arrival.html", struct {
+		err = h.tmpls.ExecuteTemplate(w, "arrivals.html", struct {
 			Mode            string
 			LineID          string
 			Arrivals        arrivals
@@ -186,63 +185,4 @@ func (h handlers) registerStationsHandler() {
 		}
 		w.Header().Set("Content-Type", "text/html")
 	})
-	stationsGET.HandleFunc("/{mode}/{line_id}", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		mode := vars["mode"]
-		lineID := vars["line_id"]
-		routes := tfl.TFLStaticDataGlobal.Routes(lineID)
-		lineDetails := tfl.TFLStaticDataGlobal.LineDetails(mode, lineID)
-		err := h.tmpls.ExecuteTemplate(w, "stations-routes-choose.html", struct {
-			Mode     string
-			LineID   string
-			LineName string
-			Routes   []tfl.Route
-		}{
-			Mode:     mode,
-			LineID:   lineID,
-			LineName: lineDetails.Name,
-			Routes:   routes,
-		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html")
-	})
-}
-
-func handleStationDataRetreivalError(w http.ResponseWriter, tmpls *template.Template, mode, lid, sid string, errMsg string) {
-	err := tmpls.ExecuteTemplate(w, "station-error.html", struct {
-		Mode      string
-		LineID    string
-		StationID string
-		Error     string
-	}{
-		Mode:      mode,
-		LineID:    lid,
-		StationID: sid,
-		Error:     errMsg,
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html")
-}
-
-func handleStationDataNotFound(w http.ResponseWriter, tmpls *template.Template, mode, lid, sid string) {
-	err := tmpls.ExecuteTemplate(w, "station-not-found.html", struct {
-		Mode      string
-		LineID    string
-		StationID string
-	}{
-		Mode:      mode,
-		LineID:    lid,
-		StationID: sid,
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html")
 }

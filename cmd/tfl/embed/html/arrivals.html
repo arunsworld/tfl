@@ -33,8 +33,8 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="float-end">
-                            <a href="/stations/[[.Mode]]/[[.LineID]]" class="btn btn-primary">All Stations</a>
-                            <a href="/stations/[[.Mode]]/[[.LineID]]/[[.Arrivals.StationID]][[if $.ShowVehicleInfo]]?v[[end]]" class="btn btn-primary">Refresh</a>
+                            <a href="/routes/[[.Mode]]/[[.LineID]]" class="btn btn-primary">All Stations</a>
+                            <a href="/arrivals/[[.Mode]]/[[.LineID]]/[[.Arrivals.StationID]][[if $.ShowVehicleInfo]]?v[[end]]" class="btn btn-primary">Refresh</a>
                         </div>
                         <h5 class="card-title text-success">
                             <span>[[.Arrivals.StationName]]</span>

@@ -16,7 +16,7 @@ func (h handlers) registerLinesHandler() {
 	linesGET.HandleFunc("/{mode}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		mode := vars["mode"]
-		lines := tfl.TFLStaticDataGlobal.Lines(mode)
+		lines := tfl.TFLStaticDataGlobal.Lines(mode, true)
 		if len(lines) == 0 {
 			handleEmptyLines(w, h.tmpls)
 			return

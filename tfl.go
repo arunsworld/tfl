@@ -14,10 +14,10 @@ import (
 var TFLStaticDataGlobal TFLStaticData = newStaticData()
 
 type TFLStaticData interface {
-	Lines(string) []Line
-	LineDetails(string, string) Line
-	Stations(string) []Station
-	Routes(string) []Route
+	Lines(mode string, includeStatus bool) []Line
+	LineDetails(mode string, lineID string) Line
+	Stations(mode string) []Station
+	Routes(mode string) []Route
 }
 
 type Line struct {
@@ -155,9 +155,12 @@ func (sd *staticData) monitorRouteFetch() {
 	}
 }
 
-func (sd *staticData) Lines(mode string) []Line {
+func (sd *staticData) Lines(mode string, includeStatus bool) []Line {
 	lines := sd.lines(mode)
 	if len(lines) == 0 {
+		return lines
+	}
+	if !includeStatus {
 		return lines
 	}
 	statuses, err := sd.fetcher.fetchStatus(mode)

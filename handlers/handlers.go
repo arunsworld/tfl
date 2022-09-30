@@ -27,8 +27,9 @@ func RegisterHandlers(handler *mux.Router, static fs.FS, templates fs.FS) {
 	h.registerStatic(static)
 	h.registerIndex()
 	h.registerLinesHandler()
+	h.registerRoutesHandler()
+	h.registerArrivalsHandler()
 	h.registerVehicleHandler()
-	h.registerStationsHandler()
 }
 
 type handlers struct {
