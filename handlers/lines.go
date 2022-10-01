@@ -18,7 +18,7 @@ func (h handlers) registerLinesHandler() {
 		mode := vars["mode"]
 		lines := tfl.TFLStaticDataGlobal.Lines(mode, true)
 		if len(lines) == 0 {
-			handleEmptyLines(w, h.tmpls)
+			handleEmptyLines(w, h.tmpls, mode)
 			return
 		}
 		err := h.tmpls.ExecuteTemplate(w, "lines.html", struct {
@@ -36,8 +36,12 @@ func (h handlers) registerLinesHandler() {
 	})
 }
 
-func handleEmptyLines(w http.ResponseWriter, tmpls *template.Template) {
-	err := tmpls.ExecuteTemplate(w, "lines-empty.html", nil)
+func handleEmptyLines(w http.ResponseWriter, tmpls *template.Template, mode string) {
+	err := tmpls.ExecuteTemplate(w, "lines-empty.html", struct {
+		Mode string
+	}{
+		Mode: mode,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

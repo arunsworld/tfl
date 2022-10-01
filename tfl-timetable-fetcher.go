@@ -127,6 +127,7 @@ func tflTimetableWrapperTotimetableByDayOfWeek(input tflTimetableWrapper, lineID
 			scheduleJourneys[departureTimeKey{hour: depTime.Hour, minute: depTime.Minute}] = journey
 		}
 		defaultTimeTableDetails = timeTableDetails{
+			scheduleName:        schedule.Name,
 			scheduledDepartures: scheduledDepartures,
 			journeys:            scheduleJourneys,
 		}

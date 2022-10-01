@@ -10,6 +10,7 @@ import (
 type ScheduledDepartureTimes struct {
 	From           Station
 	To             Station
+	ScheduleName   string
 	DepartureTimes []DepartureTime
 }
 
@@ -202,6 +203,7 @@ func (tm *timetableManager) scheduledDepartureTimesFor(lineID, srcStationID, des
 	return ScheduledDepartureTimes{
 		From:           tbdw.stops[srcStationID],
 		To:             tbdw.stops[destStationID],
+		ScheduleName:   ttDetails.scheduleName,
 		DepartureTimes: ttDetails.scheduledDepartures,
 	}, nil
 }
@@ -324,10 +326,8 @@ func (tbdw timetableByDayOfWeek) isStillCurrent() bool {
 	cachedDataFetchDate := tbdw.createdOn.Format("2006-01-02")
 	today := time.Now().Format("2006-01-02")
 	if today != cachedDataFetchDate {
-		log.Printf("cache invalidated...")
 		return false
 	}
-	log.Printf("cache still OK")
 	return true
 }
 
@@ -345,6 +345,7 @@ func (tbdw timetableByDayOfWeek) timeTableDetailsFor(weekday time.Weekday) timeT
 }
 
 type timeTableDetails struct {
+	scheduleName        string
 	scheduledDepartures []DepartureTime
 	journeys            map[departureTimeKey]*journey
 }
