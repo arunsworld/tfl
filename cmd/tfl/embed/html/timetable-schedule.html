@@ -59,6 +59,7 @@
                         <p class="card-subtitle mb-2 text-muted">Journey at [[.ScheduledTimeTable.DepartureTime.ETD]].</p>
                         [[else]]
                         <p class="card-subtitle mb-2 text-muted">Tracking Vehicle [[.ScheduledTimeTable.TrackingVehicle]]</p>
+                        <p class="card-subtitle mb-2 text-muted">On journey from [[.ScheduledTimeTable.From.Name]] at [[.ScheduledTimeTable.DepartureTime.ETD]].</p>
                         [[end]]
                         <table class="table">
                             <thead>
@@ -71,7 +72,8 @@
                                 [[range .ScheduledTimeTable.Stops]]
                                 <tr>
                                     <td>
-                                        <a href="/timetables/[[$.Mode]]/[[$.LineID]]/[[.Station.ID]]?src=[[$.OriginStation]]&dest=[[$.DestStation]]" target="_blank">[[.Station.Name]]</a>
+                                        <!-- <a href="/timetables/[[$.Mode]]/[[$.LineID]]/[[.Station.ID]]?src=[[$.OriginStation]]&dest=[[$.DestStation]]" target="_blank">[[.Station.Name]]</a> -->
+                                        <a href="/arrivals/[[$.Mode]]/[[$.LineID]]/[[.Station.ID]]?v" target="_blank">[[.Station.Name]]</a>
                                     </td>
                                     [[if $.VehicleTracking]]
                                     <td>[[.ETA]] (<span class="[[.JourneyStatus]]">[[.JourneyETA]]</span>)</td>
@@ -90,6 +92,7 @@
                                 </div>
                                 <div class="col-auto">
                                     <button type="submit" class="btn btn-primary">Track Vehicle Against Timetable</button>
+                                    <a href="/arrivals/[[.Mode]]/[[.LineID]]/[[.Station]]?v" target="_blank" class="btn btn-secondary">Arrivals</a>
                                 </div>
                             </form>
                         </div>
