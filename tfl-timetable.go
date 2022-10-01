@@ -216,7 +216,11 @@ func (tm *timetableManager) scheduledTimeTableFor(lineID, srcStationID, destStat
 	if vehicleID == "" {
 		stops = journeyStopsToScheduledStops(journey.stops, departureTime)
 	} else {
-		// tm.fetcher.fetchArrivals(lineID,srcStationID)
+		vs, err := tm.fetcher.fetchVehicleScheduleFor(lineID, vehicleID)
+		if err != nil {
+			log.Printf("error fetching vehicle schedule for line: %s; vehicle: %s during scheduledTimeTableFor", lineID, vehicleID)
+		}
+		stops = journeyStopsToScheduledStopsWithVehicleUpdates(journey.stops, departureTime, vs)
 	}
 	return ScheduledTimeTable{
 		From:          tbdw.stops[srcStationID],
@@ -233,9 +237,57 @@ func journeyStopsToScheduledStops(journeyStops []stop, departureTime DepartureTi
 			Station:       stop.station,
 			TimeToArrival: stop.timeToArrival,
 			ETA:           calculateETA(departureTime, stop.timeToArrival),
+			JourneyETA:    "NA",
+			JourneyStatus: "journeyNA",
 		})
 	}
 	return stops
+}
+
+func journeyStopsToScheduledStopsWithVehicleUpdates(journeyStops []stop, departureTime DepartureTime, vs VehicleSchedule) []ScheduledStop {
+	if vs.VehicleID == "" {
+		return journeyStopsToScheduledStops(journeyStops, departureTime)
+	}
+	journeyCache := make(map[string]VehicleStop)
+	for _, s := range vs.Stops {
+		if _, exists := journeyCache[s.StationID]; exists {
+			break
+		}
+		journeyCache[s.StationID] = s
+	}
+	stops := make([]ScheduledStop, 0, len(journeyStops))
+	for _, stop := range journeyStops {
+		eta, jeta, jstatus := calculateETAAndJourney(departureTime, stop.timeToArrival, journeyCache[stop.station.ID])
+		stops = append(stops, ScheduledStop{
+			Station:       stop.station,
+			TimeToArrival: stop.timeToArrival,
+			ETA:           eta,
+			JourneyETA:    jeta,
+			JourneyStatus: jstatus,
+		})
+	}
+	return stops
+}
+
+func calculateETAAndJourney(departureTime DepartureTime, timeToArrival time.Duration, vs VehicleStop) (string, string, string) {
+	if vs.StationID == "" {
+		return calculateETA(departureTime, timeToArrival), "NA", "journeyNA"
+	}
+	etd, err := time.Parse("15:04", departureTime.ETD())
+	if err != nil {
+		log.Printf("unable to parse ETD: %v", err)
+	}
+	eta := etd.Add(timeToArrival)
+	// journey eta
+	jetaStr := vs.ETATime()
+	jeta, _ := time.Parse("15:04", jetaStr)
+	status := "journeyOK"
+	if jeta.After(eta) {
+		if jeta.Sub(eta) > time.Minute*2 {
+			status = "journeyDelayed"
+		}
+	}
+	return eta.Format("15:04"), jetaStr, status
 }
 
 type timetableByDayOfWeek struct {

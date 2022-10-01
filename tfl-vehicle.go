@@ -31,6 +31,10 @@ func (s VehicleStop) ETA() string {
 	return fmt.Sprintf("%s (%s)", gmtc.convert(s.ExpectedArrival).Format("15:04"), s.TimeToStation)
 }
 
+func (s VehicleStop) ETATime() string {
+	return gmtc.convert(s.ExpectedArrival).Format("15:04")
+}
+
 func (sd *staticData) VehicleScheduleFor(lineID, vehicleID string) (VehicleSchedule, error) {
 	return sd.fetcher.fetchVehicleScheduleFor(lineID, vehicleID)
 }

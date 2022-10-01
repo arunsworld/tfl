@@ -22,6 +22,15 @@
         .start-5 {
             left: 5%!important;
         }
+        .journeyOK {
+            color: #198754;
+        }
+        .journeyNA {
+            color: #ffc107;
+        }
+        .journeyDelayed {
+            color: #dc3545;
+        }
     </style>
 </head>
 
@@ -52,7 +61,11 @@
                                     <td>
                                         <a href="/timetables/[[$.Mode]]/[[$.LineID]]/[[.Station.ID]]?src=[[$.OriginStation]]&dest=[[$.DestStation]]" target="_blank">[[.Station.Name]]</a>
                                     </td>
+                                    [[if $.VehicleTracking]]
+                                    <td>[[.ETA]] (<span class="[[.JourneyStatus]]">[[.JourneyETA]]</span>)</td>
+                                    [[else]]
                                     <td>[[.ETA]] ([[.TimeToArrival]])</td>
+                                    [[end]]
                                 </tr>
                                 [[end]]
                             </tbody>
