@@ -8,7 +8,7 @@
 
     <!-- Bootstrap CSS -->
     <link href="/static/bootstrap-5.0.2-dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/css/tube.css" rel="stylesheet">
+    <link href="/static/css/tube.css?v=2" rel="stylesheet">
 
     <title>Lines</title>
 
@@ -19,6 +19,9 @@
         .station-link:hover {
             color: inherit;
         }
+        .bus {
+            background-color: #e5ebc8;
+        }
     </style>
 </head>
 
@@ -28,9 +31,9 @@
         <div class="row">
             [[range .]]
             <div class="col-md-4 mb-3">
-                <div class="card [[.ID]]">
+                <div class="card [[$.Mode]] tfl-[[.ID]]">
                     <div class="card-body">
-                        <h5 class="card-title"><a href="/routes/[[$.Mode]]/[[.ID]]" class="[[.ID]] station-link">[[.Name]]</a></h5>
+                        <h5 class="card-title"><a href="/routes/[[$.Mode]]/[[.ID]]" class="tfl-[[.ID]] station-link">[[.Name]]</a></h5>
                         <ul>
                             [[range .Status.StatusDescriptions]]
                             <li>[[.]]</li>
@@ -42,6 +45,12 @@
             [[end]]
         </div>
         [[end]]
+        <div class="row justify-content-center">
+            <div class="col text-center">
+                    <a href="/lines/tube" class="btn btn-secondary">Tube</a>
+                    <a href="/lines/bus" class="btn btn-secondary">Bus</a>
+            </div>
+        </div>
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <p class="fw-lighter text-center">This website uses NO cookies, does not track you and has no ads.</p>

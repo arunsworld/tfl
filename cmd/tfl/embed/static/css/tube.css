@@ -1,44 +1,44 @@
-.bakerloo {
+.tfl-bakerloo {
     background-color: #B36305;
     color: white;
 }
-.central {
+.tfl-central {
     background-color: #E32017;
     color: white;
 }
-.circle {
+.tfl-circle {
     background-color: #FFD300;
     color: black;
 }
-.district {
+.tfl-district {
     background-color: #00782A;
     color: white;
 }
-.hammersmith-city {
+.tfl-hammersmith-city {
     background-color: #F3A9BB;
     color: black;
 }
-.jubilee {
+.tfl-jubilee {
     background-color: #A0A5A9;
     color: black;
 }
-.metropolitan {
+.tfl-metropolitan {
     background-color: #9B0056;
     color: white;
 }
-.northern {
+.tfl-northern {
     background-color: #000000;
     color: white;
 }
-.piccadilly {
+.tfl-piccadilly {
     background-color: #003688;
     color: white;
 }
-.victoria {
+.tfl-victoria {
     background-color: #0098D4;
     color: white;
 }
-.waterloo-city {
+.tfl-waterloo-city {
     background-color: #95CDBA;
     color: black;
 }
