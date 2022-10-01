@@ -48,7 +48,6 @@ type tflJourney struct {
 
 func (sf *staticFetcher) fetchTimetable(lineID, srcStation, destStation string) (timetableByDayOfWeek, error) {
 	url := sf.timetableURL(lineID, srcStation, destStation)
-	log.Println(url)
 	resp, err := sf.c.Get(url)
 	if err != nil {
 		return timetableByDayOfWeek{}, fmt.Errorf("problem fetching timetable data from API: %v", err)

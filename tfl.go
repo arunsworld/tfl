@@ -295,27 +295,32 @@ func newStaticFetcher() *staticFetcher {
 	return &staticFetcher{
 		c: c,
 		linesURL: func(mode string) string {
-			return fmt.Sprintf(LineRoutesAPI, mode)
+			return logURL(fmt.Sprintf(LineRoutesAPI, mode))
 		},
 		stationsURL: func(lineID string) string {
-			return fmt.Sprintf(LineStationsAPI, lineID)
+			return logURL(fmt.Sprintf(LineStationsAPI, lineID))
 		},
 		routesURL: func(lineID string) string {
-			return fmt.Sprintf(LineStationSequenceAPI, lineID)
+			return logURL(fmt.Sprintf(LineStationSequenceAPI, lineID))
 		},
 		statusURL: func(mode string) string {
-			return fmt.Sprintf(LineStatusAPI, mode)
+			return logURL(fmt.Sprintf(LineStatusAPI, mode))
 		},
 		timetableURL: func(lineID, srcStation, destStation string) string {
-			return fmt.Sprintf(TimetablesAPI, lineID, srcStation, destStation)
+			return logURL(fmt.Sprintf(TimetablesAPI, lineID, srcStation, destStation))
 		},
 		arrivalsURL: func(lineID, stationID string) string {
-			return fmt.Sprintf(LineArrivalsAPI, lineID, stationID)
+			return logURL(fmt.Sprintf(LineArrivalsAPI, lineID, stationID))
 		},
 		vehiclesURL: func(vid string) string {
-			return fmt.Sprintf(VehicleArrivalsAPI, vid)
+			return logURL(fmt.Sprintf(VehicleArrivalsAPI, vid))
 		},
 	}
+}
+
+func logURL(v string) string {
+	log.Println(v)
+	return v
 }
 
 type tflLine struct {
