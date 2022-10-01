@@ -36,18 +36,30 @@
 
 <body>
     <div class="container main">
-        <div class="row justify-content-center">
+        <div class="row justify-content-center mb-3">
             <div class="col-lg-9 col-xl-8 position-relative">
                 <span class="position-absolute top-10 start-5 translate-middle rounded-circle [[.LineID]] p-3 above"><span class="visually-hidden">tube line identifer</span></span>
                 <div class="card">
                     <div class="card-body">
                         <div class="float-end">
+                            [[if .VehicleTracking]]
+                            <a href="/timetables/[[.Mode]]/[[.LineID]]/[[.Station]]/[[.ScheduledTimeTable.DepartureTime.Hour]]/[[.ScheduledTimeTable.DepartureTime.Minute]]?src=[[.OriginStation]]&dest=[[.DestStation]]&v=[[.ScheduledTimeTable.TrackingVehicle]]" class="btn btn-primary">Refresh</a>
+                            [[else]]
                             <a href="/timetables/[[.Mode]]/[[.LineID]]/[[.Station]]?src=[[.OriginStation]]&dest=[[.DestStation]]" class="btn btn-primary">All Departures</a>
+                            [[end]]
                         </div>
                         <h5 class="card-title text-success">
+                            [[if eq .ScheduledTimeTable.CurrentLocation ""]]
                             <span>[[.ScheduledTimeTable.From.Name]]</span>
+                            [[else]]
+                            <span>[[.ScheduledTimeTable.CurrentLocation]]</span>
+                            [[end]]
                         </h5>
+                        [[if eq .ScheduledTimeTable.TrackingVehicle ""]]
                         <p class="card-subtitle mb-2 text-muted">Journey at [[.ScheduledTimeTable.DepartureTime.ETD]].</p>
+                        [[else]]
+                        <p class="card-subtitle mb-2 text-muted">Tracking Vehicle [[.ScheduledTimeTable.TrackingVehicle]]</p>
+                        [[end]]
                         <table class="table">
                             <thead>
                                 <tr>
@@ -70,6 +82,18 @@
                                 [[end]]
                             </tbody>
                         </table>
+                        [[if not $.VehicleTracking]]
+                        <div>
+                            <form class="row g-3" method="POST" action="/track/[[.Mode]]/[[.LineID]]/[[.Station]]/[[.OriginStation]]/[[.DestStation]]/[[.ScheduledTimeTable.DepartureTime.Hour]]/[[.ScheduledTimeTable.DepartureTime.Minute]]">
+                                <div class="col-auto">
+                                    <input type="text" class="form-control" name="vehicleID">
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-primary">Track Vehicle Against Timetable</button>
+                                </div>
+                            </form>
+                        </div>
+                        [[end]]
                     </div>
                 </div>
             </div>

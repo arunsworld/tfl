@@ -31,6 +31,7 @@ func RegisterHandlers(handler *mux.Router, static fs.FS, templates fs.FS) {
 	h.registerArrivalsHandler()
 	h.registerVehicleHandler()
 	h.registerTimetablesHandler()
+	h.registerVehicleTrackingAgainstTimetableHandler()
 }
 
 type handlers struct {

@@ -110,3 +110,27 @@ func (h handlers) registerTimetablesHandler() {
 		w.Header().Set("Content-Type", "text/html")
 	})
 }
+
+func (h handlers) registerVehicleTrackingAgainstTimetableHandler() {
+	trackerPOST := h.handler.PathPrefix("/track/").Methods("POST").Subrouter()
+	trackerPOST.HandleFunc("/{mode}/{line_id}/{station_id}/{src_station}/{dest_station}/{hour}/{minute}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		mode := vars["mode"]
+		lineID := vars["line_id"]
+		fromStationID := vars["station_id"]
+		hour := vars["hour"]
+		minute := vars["minute"]
+		srcStationID := vars["src_station"]
+		destStationID := vars["dest_station"]
+		if err := r.ParseForm(); err != nil {
+			http.Redirect(w, r, fmt.Sprintf("/timetables/%s/%s/%s/%s/%s?src=%s&dest=%s", mode, lineID, fromStationID, hour, minute, srcStationID, destStationID), 302)
+			return
+		}
+		vehicleID := r.FormValue("vehicleID")
+		if vehicleID == "" {
+			http.Redirect(w, r, fmt.Sprintf("/timetables/%s/%s/%s/%s/%s?src=%s&dest=%s", mode, lineID, fromStationID, hour, minute, srcStationID, destStationID), 302)
+			return
+		}
+		http.Redirect(w, r, fmt.Sprintf("/timetables/%s/%s/%s/%s/%s?src=%s&dest=%s&v=%s", mode, lineID, fromStationID, hour, minute, srcStationID, destStationID, vehicleID), 302)
+	})
+}

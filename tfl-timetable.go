@@ -7,6 +7,53 @@ import (
 	"time"
 )
 
+type ScheduledDepartureTimes struct {
+	From           Station
+	To             Station
+	DepartureTimes []DepartureTime
+}
+
+type DepartureTime struct {
+	Hour           string
+	Minute         string
+	Destination    Station
+	DestinationETA string
+}
+
+func (dt DepartureTime) ETD() string {
+	hour, err := strconv.Atoi(dt.Hour)
+	if err != nil {
+		log.Printf("error parsing hour: %v", err)
+		return "00:00"
+	}
+	minute, err := strconv.Atoi(dt.Minute)
+	if err != nil {
+		log.Printf("error parsing minute: %v", err)
+		return "00:00"
+	}
+	if hour > 23 {
+		hour = hour - 24
+	}
+	return fmt.Sprintf("%02d:%02d", hour, minute)
+}
+
+type ScheduledTimeTable struct {
+	From            Station
+	To              Station
+	DepartureTime   DepartureTime
+	Stops           []ScheduledStop
+	CurrentLocation string
+	TrackingVehicle string
+}
+
+type ScheduledStop struct {
+	Station       Station
+	TimeToArrival time.Duration
+	ETA           string
+	JourneyETA    string
+	JourneyStatus string
+}
+
 type timeTableRequest struct {
 	lineID        string
 	fromStationID string
@@ -96,53 +143,8 @@ func (sd *staticData) ScheduledTimeTable(lineID, fromStationID, toStationID stri
 	}
 }
 
-type ScheduledDepartureTimes struct {
-	From           Station
-	To             Station
-	DepartureTimes []DepartureTime
-}
-
-type DepartureTime struct {
-	Hour           string
-	Minute         string
-	Destination    Station
-	DestinationETA string
-}
-
 type departureTimeKey struct {
 	hour, minute string
-}
-
-func (dt DepartureTime) ETD() string {
-	hour, err := strconv.Atoi(dt.Hour)
-	if err != nil {
-		log.Printf("error parsing hour: %v", err)
-		return "00:00"
-	}
-	minute, err := strconv.Atoi(dt.Minute)
-	if err != nil {
-		log.Printf("error parsing minute: %v", err)
-		return "00:00"
-	}
-	if hour > 23 {
-		hour = hour - 24
-	}
-	return fmt.Sprintf("%02d:%02d", hour, minute)
-}
-
-type ScheduledTimeTable struct {
-	From          Station
-	To            Station
-	DepartureTime DepartureTime
-	Stops         []ScheduledStop
-}
-
-type ScheduledStop struct {
-	Station       Station
-	TimeToArrival time.Duration
-	ETA           string
-	JourneyETA    string
-	JourneyStatus string
 }
 
 type timetableCacheKey struct {
@@ -212,6 +214,7 @@ func (tm *timetableManager) scheduledTimeTableFor(lineID, srcStationID, destStat
 	if !ok {
 		return ScheduledTimeTable{}, fmt.Errorf("no journey found for departure time: %s", departureTime.ETD())
 	}
+	currentLocation := ""
 	var stops []ScheduledStop
 	if vehicleID == "" {
 		stops = journeyStopsToScheduledStops(journey.stops, departureTime)
@@ -221,12 +224,15 @@ func (tm *timetableManager) scheduledTimeTableFor(lineID, srcStationID, destStat
 			log.Printf("error fetching vehicle schedule for line: %s; vehicle: %s during scheduledTimeTableFor", lineID, vehicleID)
 		}
 		stops = journeyStopsToScheduledStopsWithVehicleUpdates(journey.stops, departureTime, vs)
+		currentLocation = vs.CurrentLocation
 	}
 	return ScheduledTimeTable{
-		From:          tbdw.stops[srcStationID],
-		To:            tbdw.stops[destStationID],
-		DepartureTime: departureTime,
-		Stops:         stops,
+		From:            tbdw.stops[srcStationID],
+		To:              tbdw.stops[destStationID],
+		DepartureTime:   departureTime,
+		Stops:           stops,
+		CurrentLocation: currentLocation,
+		TrackingVehicle: vehicleID,
 	}, nil
 }
 
