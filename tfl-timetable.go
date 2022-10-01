@@ -73,7 +73,7 @@ type timeTableRequest struct {
 	}
 }
 
-func (sd *staticData) monitorTimetableFetch() {
+func (sd *tflAPIImpl) monitorTimetableFetch() {
 	ttMgr := newTimetableManager(sd.fetcher)
 	for req := range sd.timeTableRequests {
 		if req.departureTime.Hour == "" {
@@ -98,7 +98,7 @@ func (sd *staticData) monitorTimetableFetch() {
 	}
 }
 
-func (sd *staticData) ScheduledDepartureTimes(lineID, fromStationID, toStationID string, weekday time.Weekday) (ScheduledDepartureTimes, error) {
+func (sd *tflAPIImpl) ScheduledDepartureTimes(lineID, fromStationID, toStationID string, weekday time.Weekday) (ScheduledDepartureTimes, error) {
 	resp := make(chan struct {
 		depTimes ScheduledDepartureTimes
 		err      error
@@ -119,7 +119,7 @@ func (sd *staticData) ScheduledDepartureTimes(lineID, fromStationID, toStationID
 	}
 }
 
-func (sd *staticData) ScheduledTimeTable(lineID, fromStationID, toStationID string,
+func (sd *tflAPIImpl) ScheduledTimeTable(lineID, fromStationID, toStationID string,
 	weekday time.Weekday, depTime DepartureTime, vehicleID string) (ScheduledTimeTable, error) {
 
 	resp := make(chan struct {
@@ -169,11 +169,11 @@ func calculateETA(etd time.Time, timeToArrival time.Duration) string {
 // only one of this should exist
 // it's methods and operations are not thread-safe therefore should not be called concurrently
 type timetableManager struct {
-	fetcher *staticFetcher
+	fetcher *remoteTFLHTTPFetcher
 	cache   map[timetableCacheKey]timetableByDayOfWeek
 }
 
-func newTimetableManager(fetcher *staticFetcher) *timetableManager {
+func newTimetableManager(fetcher *remoteTFLHTTPFetcher) *timetableManager {
 	return &timetableManager{
 		fetcher: fetcher,
 		cache:   make(map[timetableCacheKey]timetableByDayOfWeek),

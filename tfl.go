@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-var TFLStaticDataGlobal TFLStaticData = newStaticData()
+var TFLAPIGlobal TFLAPI = newTFLAPIImpl()
 
-type TFLStaticData interface {
+type TFLAPI interface {
 	Lines(mode string, includeStatus bool) []Line
 	LineDetails(mode string, lineID string) Line
 	Stations(mode string) []Station
@@ -64,8 +64,8 @@ func (s Station) ShortName() string {
 	return strings.ReplaceAll(s.Name, " Underground Station", "")
 }
 
-type staticData struct {
-	fetcher           *staticFetcher
+type tflAPIImpl struct {
+	fetcher           *remoteTFLHTTPFetcher
 	lineRequests      chan lineRequest
 	stationRequests   chan stationRequest
 	routeRequests     chan routeRequest
@@ -88,8 +88,8 @@ type routeRequest struct {
 	resp   chan []Route
 }
 
-func newStaticData() *staticData {
-	result := &staticData{
+func newTFLAPIImpl() *tflAPIImpl {
+	result := &tflAPIImpl{
 		lineRequests:      make(chan lineRequest),
 		stationRequests:   make(chan stationRequest),
 		routeRequests:     make(chan routeRequest),
@@ -103,7 +103,7 @@ func newStaticData() *staticData {
 	return result
 }
 
-func (sd *staticData) monitorLineFetch() {
+func (sd *tflAPIImpl) monitorLineFetch() {
 	lines := map[string][]Line{}
 	linesCache := make(map[string]Line)
 	for req := range sd.lineRequests {
@@ -142,7 +142,7 @@ func respondToLineRequest(req lineRequest, lines []Line, linesCache map[string]L
 	}
 }
 
-func (sd *staticData) monitorStationFetch() {
+func (sd *tflAPIImpl) monitorStationFetch() {
 	stations := map[string][]Station{}
 	for req := range sd.stationRequests {
 		v, ok := stations[req.lineID]
@@ -161,7 +161,7 @@ func (sd *staticData) monitorStationFetch() {
 	}
 }
 
-func (sd *staticData) monitorRouteFetch() {
+func (sd *tflAPIImpl) monitorRouteFetch() {
 	routes := map[string][]Route{}
 	for req := range sd.routeRequests {
 		v, ok := routes[req.lineID]
@@ -180,7 +180,7 @@ func (sd *staticData) monitorRouteFetch() {
 	}
 }
 
-func (sd *staticData) Lines(mode string, includeStatus bool) []Line {
+func (sd *tflAPIImpl) Lines(mode string, includeStatus bool) []Line {
 	lines := sd.lines(mode)
 	if len(lines) == 0 {
 		return lines
@@ -201,7 +201,7 @@ func (sd *staticData) Lines(mode string, includeStatus bool) []Line {
 	return result
 }
 
-func (sd *staticData) lines(mode string) []Line {
+func (sd *tflAPIImpl) lines(mode string) []Line {
 	resp := make(chan []Line, 1)
 	req := lineRequest{resp: resp, mode: mode}
 	select {
@@ -218,7 +218,7 @@ func (sd *staticData) lines(mode string) []Line {
 	return lines
 }
 
-func (sd *staticData) LineDetails(mode, lineID string) Line {
+func (sd *tflAPIImpl) LineDetails(mode, lineID string) Line {
 	if lineID == "" {
 		log.Printf("WARNING: LineDetails called without lineID")
 		return Line{}
@@ -245,7 +245,7 @@ func (sd *staticData) LineDetails(mode, lineID string) Line {
 	return Line{}
 }
 
-func (sd *staticData) Stations(lineID string) []Station {
+func (sd *tflAPIImpl) Stations(lineID string) []Station {
 	resp := make(chan []Station, 1)
 	req := stationRequest{lineID: lineID, resp: resp}
 	select {
@@ -262,7 +262,7 @@ func (sd *staticData) Stations(lineID string) []Station {
 	return stations
 }
 
-func (sd *staticData) Routes(lineID string) []Route {
+func (sd *tflAPIImpl) Routes(lineID string) []Route {
 	resp := make(chan []Route, 1)
 	req := routeRequest{lineID: lineID, resp: resp}
 	select {
@@ -279,7 +279,7 @@ func (sd *staticData) Routes(lineID string) []Route {
 	return routes
 }
 
-type staticFetcher struct {
+type remoteTFLHTTPFetcher struct {
 	c            http.Client
 	linesURL     func(string) string
 	stationsURL  func(string) string
@@ -290,9 +290,9 @@ type staticFetcher struct {
 	vehiclesURL  func(string) string
 }
 
-func newStaticFetcher() *staticFetcher {
+func newStaticFetcher() *remoteTFLHTTPFetcher {
 	c := http.Client{Timeout: time.Duration(5) * time.Second}
-	return &staticFetcher{
+	return &remoteTFLHTTPFetcher{
 		c: c,
 		linesURL: func(mode string) string {
 			return logURL(fmt.Sprintf(LineRoutesAPI, mode))
@@ -332,7 +332,7 @@ type routeSection struct {
 	Name string
 }
 
-func (sf *staticFetcher) fetchLines(mode string) ([]Line, error) {
+func (sf *remoteTFLHTTPFetcher) fetchLines(mode string) ([]Line, error) {
 	url := sf.linesURL(mode)
 	resp, err := sf.c.Get(url)
 	if err != nil {
@@ -367,7 +367,7 @@ type tflStation struct {
 	Lat, Lon   float64
 }
 
-func (sf *staticFetcher) fetchStation(lineID string) ([]Station, error) {
+func (sf *remoteTFLHTTPFetcher) fetchStation(lineID string) ([]Station, error) {
 	url := sf.stationsURL(lineID)
 	resp, err := sf.c.Get(url)
 	if err != nil {
@@ -406,7 +406,7 @@ type tflLineRoute struct {
 	NaptanIds []string
 }
 
-func (sf *staticFetcher) fetchRoutes(lineID string) ([]Route, error) {
+func (sf *remoteTFLHTTPFetcher) fetchRoutes(lineID string) ([]Route, error) {
 	// Get stations first and create a hashmap
 	allStations, err := sf.fetchStation(lineID)
 	if err != nil {
@@ -482,7 +482,7 @@ func (s tflStatus) statusDescriptions() []string {
 	return result
 }
 
-func (sf *staticFetcher) fetchStatus(mode string) (map[string]Status, error) {
+func (sf *remoteTFLHTTPFetcher) fetchStatus(mode string) (map[string]Status, error) {
 	url := sf.statusURL(mode)
 	resp, err := sf.c.Get(url)
 	if err != nil {

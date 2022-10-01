@@ -32,6 +32,6 @@ func (a Arrival) ETA() string {
 	return fmt.Sprintf("%s (%s)", gmtc.convert(a.ExpectedArrival).Format("15:04"), a.TimeToStation)
 }
 
-func (sd *staticData) ArrivalsFor(lineID, stationID string) (Arrivals, error) {
+func (sd *tflAPIImpl) ArrivalsFor(lineID, stationID string) (Arrivals, error) {
 	return sd.fetcher.fetchArrivals(lineID, stationID)
 }

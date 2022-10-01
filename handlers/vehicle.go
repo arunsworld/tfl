@@ -23,7 +23,7 @@ func (h handlers) registerVehicleHandler() {
 		mode := vars["mode"]
 		lineID := vars["line_id"]
 		vehicleID := vars["vehicle_id"]
-		vs, err := tfl.TFLStaticDataGlobal.VehicleScheduleFor(lineID, vehicleID)
+		vs, err := tfl.TFLAPIGlobal.VehicleScheduleFor(lineID, vehicleID)
 		if err != nil {
 			handleVehicleDataRetreivalError(w, h.tmpls, lineID, vehicleID, err.Error())
 			return

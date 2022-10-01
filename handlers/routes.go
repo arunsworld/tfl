@@ -25,8 +25,8 @@ func (h handlers) registerRoutesHandler() {
 		vars := mux.Vars(r)
 		mode := vars["mode"]
 		lineID := vars["line_id"]
-		routes := tfl.TFLStaticDataGlobal.Routes(lineID)
-		lineDetails := tfl.TFLStaticDataGlobal.LineDetails(mode, lineID)
+		routes := tfl.TFLAPIGlobal.Routes(lineID)
+		lineDetails := tfl.TFLAPIGlobal.LineDetails(mode, lineID)
 		// check if for arrivals or timetable
 		var nn nextNav
 		queryParams := r.URL.Query()

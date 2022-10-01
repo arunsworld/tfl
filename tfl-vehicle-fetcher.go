@@ -22,7 +22,7 @@ type tflVehicleArrivals struct {
 	ExpectedArrival string
 }
 
-func (sf *staticFetcher) fetchVehicleScheduleFor(lineID, vehicleID string) (VehicleSchedule, error) {
+func (sf *remoteTFLHTTPFetcher) fetchVehicleScheduleFor(lineID, vehicleID string) (VehicleSchedule, error) {
 	url := sf.vehiclesURL(vehicleID)
 	resp, err := sf.c.Get(url)
 	if err != nil {

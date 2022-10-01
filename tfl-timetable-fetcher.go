@@ -46,7 +46,7 @@ type tflJourney struct {
 	IntervalId int
 }
 
-func (sf *staticFetcher) fetchTimetable(lineID, srcStation, destStation string) (timetableByDayOfWeek, error) {
+func (sf *remoteTFLHTTPFetcher) fetchTimetable(lineID, srcStation, destStation string) (timetableByDayOfWeek, error) {
 	url := sf.timetableURL(lineID, srcStation, destStation)
 	resp, err := sf.c.Get(url)
 	if err != nil {

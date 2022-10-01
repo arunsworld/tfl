@@ -14,7 +14,7 @@ func (h handlers) registerArrivalsHandler() {
 		mode := vars["mode"]
 		lineID := vars["line_id"]
 		stationID := vars["station_id"]
-		avls, err := tfl.TFLStaticDataGlobal.ArrivalsFor(lineID, stationID)
+		avls, err := tfl.TFLAPIGlobal.ArrivalsFor(lineID, stationID)
 		if err != nil {
 			handleStationDataRetreivalError(w, h.tmpls, mode, lineID, stationID, "arrivals", false, "", "", err.Error())
 			return

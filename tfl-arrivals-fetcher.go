@@ -42,7 +42,7 @@ func (tsa tflStationArrival) cleansedPlatformName() string {
 	return tsa.PlatformName
 }
 
-func (sf *staticFetcher) fetchArrivals(lineID, stationID string) (Arrivals, error) {
+func (sf *remoteTFLHTTPFetcher) fetchArrivals(lineID, stationID string) (Arrivals, error) {
 	url := sf.arrivalsURL(lineID, stationID)
 	resp, err := sf.c.Get(url)
 	if err != nil {

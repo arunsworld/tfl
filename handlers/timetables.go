@@ -29,7 +29,7 @@ func (h handlers) registerTimetablesHandler() {
 			http.Redirect(w, r, fmt.Sprintf("/routes/%s/%s?timetables", mode, lineID), 302)
 			return
 		}
-		sdt, err := tfl.TFLStaticDataGlobal.ScheduledDepartureTimes(lineID, fromStationID, destStationID[0], time.Now().Weekday())
+		sdt, err := tfl.TFLAPIGlobal.ScheduledDepartureTimes(lineID, fromStationID, destStationID[0], time.Now().Weekday())
 		if err != nil {
 			handleStationDataRetreivalError(w, h.tmpls, mode, lineID, fromStationID, "timetables", true, originStationID[0], destStationID[0], err.Error())
 			return
@@ -80,7 +80,7 @@ func (h handlers) registerTimetablesHandler() {
 			vehicleID = _vid[0]
 			vehicleTracking = true
 		}
-		stt, err := tfl.TFLStaticDataGlobal.ScheduledTimeTable(lineID, fromStationID, destStationID[0], time.Now().Weekday(), depTime, vehicleID)
+		stt, err := tfl.TFLAPIGlobal.ScheduledTimeTable(lineID, fromStationID, destStationID[0], time.Now().Weekday(), depTime, vehicleID)
 		if err != nil {
 			handleStationDataRetreivalError(w, h.tmpls, mode, lineID, fromStationID, "timetables", true, originStationID[0], destStationID[0], err.Error())
 			return
