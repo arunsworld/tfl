@@ -15,6 +15,10 @@ type nextNav struct {
 	SwitchParam string
 }
 
+func (n nextNav) CaptureStartAndDest() bool {
+	return n.Navigation == "timetables"
+}
+
 func (h handlers) registerRoutesHandler() {
 	routesGET := h.handler.PathPrefix("/routes/").Methods("GET").Subrouter()
 	routesGET.HandleFunc("/{mode}/{line_id}", func(w http.ResponseWriter, r *http.Request) {
@@ -63,19 +67,24 @@ func (h handlers) registerRoutesHandler() {
 	})
 }
 
-func handleStationDataRetreivalError(w http.ResponseWriter, tmpls *template.Template, mode, lid, sid string, nav string, errMsg string) {
+func handleStationDataRetreivalError(w http.ResponseWriter, tmpls *template.Template, mode, lid, sid string, nav string, showSrcDest bool, src, dest string, errMsg string) {
 	err := tmpls.ExecuteTemplate(w, "station-error.html", struct {
-		Mode       string
-		LineID     string
-		StationID  string
-		Error      string
-		Navigation string
+		Mode        string
+		LineID      string
+		StationID   string
+		Error       string
+		Navigation  string
+		ShowSrcDest bool
+		Src, Dest   string
 	}{
-		Mode:       mode,
-		LineID:     lid,
-		StationID:  sid,
-		Error:      errMsg,
-		Navigation: nav,
+		Mode:        mode,
+		LineID:      lid,
+		StationID:   sid,
+		Error:       errMsg,
+		Navigation:  nav,
+		ShowSrcDest: showSrcDest,
+		Src:         src,
+		Dest:        dest,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

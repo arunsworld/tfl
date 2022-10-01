@@ -9,7 +9,7 @@
     <!-- Bootstrap CSS -->
     <link href="/static/bootstrap-5.0.2-dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <title>Station Arrivals</title>
+    <title>Station [[.Navigation]]</title>
 
     <style>
     </style>
@@ -22,7 +22,11 @@
                 <div class="card-body">
                     <h5 class="card-title text-danger">Error retreiving data for station: [[.StationID]]</h5>
                     <p class="card-text">[[.Error]]</p>
+                    [[if .ShowSrcDest]]
+                    <a href="/[[.Navigation]]/[[.Mode]]/[[.LineID]]/[[.StationID]]?src=[[.Src]]&dest=[[.Dest]]" class="btn btn-primary">Try Again</a>
+                    [[else]]
                     <a href="/[[.Navigation]]/[[.Mode]]/[[.LineID]]/[[.StationID]]" class="btn btn-primary">Try Again</a>
+                    [[end]]
                 </div>
             </div>
         </div>

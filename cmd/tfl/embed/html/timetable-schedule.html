@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="/static/bootstrap-5.0.2-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/tube.css" rel="stylesheet">
+
+    <title>[[.ScheduledTimeTable.From.Name]] [[.ScheduledTimeTable.DepartureTime.ETD]] Timetable</title>
+
+    <style>
+        .main {
+                margin-top: 50px;
+            }
+        .above {
+            z-index: 1;
+        }
+        .start-5 {
+            left: 5%!important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container main">
+        <div class="row justify-content-center">
+            <div class="col-lg-9 col-xl-8 position-relative">
+                <span class="position-absolute top-10 start-5 translate-middle rounded-circle [[.LineID]] p-3 above"><span class="visually-hidden">tube line identifer</span></span>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="float-end">
+                            <a href="/timetables/[[.Mode]]/[[.LineID]]/[[.Station]]?src=[[.OriginStation]]&dest=[[.DestStation]]" class="btn btn-primary">All Departures</a>
+                        </div>
+                        <h5 class="card-title text-success">
+                            <span>[[.ScheduledTimeTable.From.Name]]</span>
+                        </h5>
+                        <p class="card-subtitle mb-2 text-muted">Journey at [[.ScheduledTimeTable.DepartureTime.ETD]].</p>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Station</th>
+                                    <th scope="col">ETA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                [[range .ScheduledTimeTable.Stops]]
+                                <tr>
+                                    <td>
+                                        <a href="/timetables/[[$.Mode]]/[[$.LineID]]/[[.Station.ID]]?src=[[$.OriginStation]]&dest=[[$.DestStation]]" target="_blank">[[.Station.Name]]</a>
+                                    </td>
+                                    <td>[[.ETA]] ([[.TimeToArrival]])</td>
+                                </tr>
+                                [[end]]
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

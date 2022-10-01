@@ -18,6 +18,8 @@ type TFLStaticData interface {
 	LineDetails(mode string, lineID string) Line
 	Stations(mode string) []Station
 	Routes(mode string) []Route
+	ScheduledDepartureTimes(lineID, fromStationID, toStationID string, weekday time.Weekday) (ScheduledDepartureTimes, error)
+	ScheduledTimeTable(lineID, fromStationID, toStationID string, weekday time.Weekday, depTime DepartureTime) (ScheduledTimeTable, error)
 }
 
 type Line struct {
@@ -36,17 +38,36 @@ type Route struct {
 	Stations []Station
 }
 
+func (r Route) Start() string {
+	if len(r.Stations) == 0 {
+		return ""
+	}
+	return r.Stations[0].ID
+}
+
+func (r Route) Dest() string {
+	if len(r.Stations) == 0 {
+		return ""
+	}
+	return r.Stations[len(r.Stations)-1].ID
+}
+
 type Station struct {
 	ID       string
 	Name     string
 	Lat, Lon float64
 }
 
+func (s Station) ShortName() string {
+	return strings.ReplaceAll(s.Name, " Underground Station", "")
+}
+
 type staticData struct {
-	fetcher         *staticFetcher
-	lineRequests    chan lineRequest
-	stationRequests chan stationRequest
-	routeRequests   chan routeRequest
+	fetcher           *staticFetcher
+	lineRequests      chan lineRequest
+	stationRequests   chan stationRequest
+	routeRequests     chan routeRequest
+	timeTableRequests chan timeTableRequest
 }
 
 type lineRequest struct {
@@ -67,14 +88,16 @@ type routeRequest struct {
 
 func newStaticData() *staticData {
 	result := &staticData{
-		lineRequests:    make(chan lineRequest),
-		stationRequests: make(chan stationRequest),
-		routeRequests:   make(chan routeRequest),
-		fetcher:         newStaticFetcher(),
+		lineRequests:      make(chan lineRequest),
+		stationRequests:   make(chan stationRequest),
+		routeRequests:     make(chan routeRequest),
+		timeTableRequests: make(chan timeTableRequest),
+		fetcher:           newStaticFetcher(),
 	}
 	go result.monitorLineFetch()
 	go result.monitorStationFetch()
 	go result.monitorRouteFetch()
+	go result.monitorTimetableFetch()
 	return result
 }
 
@@ -254,15 +277,6 @@ func (sd *staticData) Routes(lineID string) []Route {
 	return routes
 }
 
-type staticFetcher struct {
-	c             http.Client
-	linesURL      func(string) string
-	stationsURL   func(string) string
-	routesURL     func(string) string
-	statusURL     func(string) string
-	statusByIDURL func([]string) string
-}
-
 func newStaticFetcher() *staticFetcher {
 	c := http.Client{Timeout: time.Duration(5) * time.Second}
 	return &staticFetcher{
@@ -279,8 +293,8 @@ func newStaticFetcher() *staticFetcher {
 		statusURL: func(mode string) string {
 			return fmt.Sprintf(LineStatusAPI, mode)
 		},
-		statusByIDURL: func(ids []string) string {
-			return fmt.Sprintf(LineStatusByIDAPI, strings.Join(ids, ","))
+		timetableURL: func(lineID, srcStation, destStation string) string {
+			return fmt.Sprintf(TimetablesAPI, lineID, srcStation, destStation)
 		},
 	}
 }
@@ -324,6 +338,7 @@ func (sf *staticFetcher) fetchLines(mode string) ([]Line, error) {
 
 type tflStation struct {
 	Id         string
+	Name       string // for timetable
 	CommonName string
 	Lat, Lon   float64
 }
@@ -457,30 +472,6 @@ func (sf *staticFetcher) fetchStatus(mode string) (map[string]Status, error) {
 	statuses := []tflStatus{}
 	if err := json.Unmarshal(body, &statuses); err != nil {
 		return nil, fmt.Errorf("problem parsing status data from TFL: %v", err)
-	}
-	result := make(map[string]Status)
-	for _, s := range statuses {
-		result[s.Id] = Status{
-			StatusDescriptions: s.statusDescriptions(),
-		}
-	}
-	return result, nil
-}
-
-func (sf *staticFetcher) fetchStatusByIDs(ids []string) (map[string]Status, error) {
-	url := sf.statusByIDURL(ids)
-	resp, err := sf.c.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("problem fetching status data by ID from API: %v", err)
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("problem reading status data by ID from response: %v", err)
-	}
-	statuses := []tflStatus{}
-	if err := json.Unmarshal(body, &statuses); err != nil {
-		return nil, fmt.Errorf("problem parsing status data by ID from TFL: %v", err)
 	}
 	result := make(map[string]Status)
 	for _, s := range statuses {

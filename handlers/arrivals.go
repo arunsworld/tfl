@@ -158,7 +158,7 @@ func (h handlers) registerArrivalsHandler() {
 		stationID := vars["station_id"]
 		avls, err := af.arrivalsFor(lineID, stationID)
 		if err != nil {
-			handleStationDataRetreivalError(w, h.tmpls, mode, lineID, stationID, "arrivals", err.Error())
+			handleStationDataRetreivalError(w, h.tmpls, mode, lineID, stationID, "arrivals", false, "", "", err.Error())
 			return
 		}
 		if avls.StationID == "" {

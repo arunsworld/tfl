@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="/static/bootstrap-5.0.2-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/tube.css" rel="stylesheet">
+
+    <title>[[.ScheduledDepartureTimes.From.Name]] Timetable</title>
+
+    <style>
+        .main {
+                margin-top: 50px;
+            }
+        .above {
+            z-index: 1;
+        }
+        .start-5 {
+            left: 5%!important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container main">
+        <div class="row justify-content-center">
+            <div class="col-lg-9 col-xl-8 position-relative">
+                <span class="position-absolute top-10 start-5 translate-middle rounded-circle [[.LineID]] p-3 above"><span class="visually-hidden">tube line identifer</span></span>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="float-end">
+                            <a href="/routes/[[.Mode]]/[[.LineID]]?timetables" class="btn btn-primary">All Stations</a>
+                        </div>
+                        <h5 class="card-title text-success">
+                            <span>[[.ScheduledDepartureTimes.From.Name]]</span>
+                        </h5>
+                        <p class="card-subtitle mb-2 text-muted">Journeys to [[.ScheduledDepartureTimes.To.Name]].</p>
+                        <p class="card-subtitle mb-2 text-muted">Click on a scheduled departure time for the timetable.</p>
+                        <div class="row">
+                            [[range .ScheduledDepartureTimes.DepartureTimes]]
+                            <div class="col mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <a href="/timetables/[[$.Mode]]/[[$.LineID]]/[[$.Station]]/[[.Hour]]/[[.Minute]]?src=[[$.OriginStation]]&dest=[[$.DestStation]]">[[.ETD]]-[[.DestinationETA]]</a>
+                                        <br/>
+                                        <span>[[.Destination.ShortName]]</span>
+                                    </div>
+                                </div>
+                            </div>
+                            [[end]]
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
