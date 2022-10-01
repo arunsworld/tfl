@@ -122,7 +122,7 @@ func tflTimetableWrapperTotimetableByDayOfWeek(input tflTimetableWrapper, lineID
 				Minute:      kj.Minute,
 				Destination: journey.stops[len(journey.stops)-1].station,
 			}
-			depTime.DestinationETA = calculateETA(depTime, journey.stops[len(journey.stops)-1].timeToArrival)
+			depTime.DestinationETA = calculateETAFromDepTime(depTime, journey.stops[len(journey.stops)-1].timeToArrival)
 			scheduledDepartures = append(scheduledDepartures, depTime)
 			scheduleJourneys[departureTimeKey{hour: depTime.Hour, minute: depTime.Minute}] = journey
 		}

@@ -152,11 +152,15 @@ type timetableCacheKey struct {
 	from, to string
 }
 
-func calculateETA(departureTime DepartureTime, timeToArrival time.Duration) string {
-	etd, err := time.Parse("15:04", departureTime.ETD())
+func calculateETAFromDepTime(depTime DepartureTime, timeToArrival time.Duration) string {
+	etd, err := time.Parse("15:04", depTime.ETD())
 	if err != nil {
 		log.Printf("unable to parse ETD: %v", err)
 	}
+	return calculateETA(etd, timeToArrival)
+}
+
+func calculateETA(etd time.Time, timeToArrival time.Duration) string {
 	eta := etd.Add(timeToArrival)
 	return eta.Format("15:04")
 }
@@ -238,11 +242,15 @@ func (tm *timetableManager) scheduledTimeTableFor(lineID, srcStationID, destStat
 
 func journeyStopsToScheduledStops(journeyStops []stop, departureTime DepartureTime) []ScheduledStop {
 	stops := make([]ScheduledStop, 0, len(journeyStops))
+	etd, err := time.Parse("15:04", departureTime.ETD())
+	if err != nil {
+		log.Printf("unable to parse ETD: %v", err)
+	}
 	for _, stop := range journeyStops {
 		stops = append(stops, ScheduledStop{
 			Station:       stop.station,
 			TimeToArrival: stop.timeToArrival,
-			ETA:           calculateETA(departureTime, stop.timeToArrival),
+			ETA:           calculateETA(etd, stop.timeToArrival),
 			JourneyETA:    "NA",
 			JourneyStatus: "journeyNA",
 		})
@@ -261,9 +269,17 @@ func journeyStopsToScheduledStopsWithVehicleUpdates(journeyStops []stop, departu
 		}
 		journeyCache[s.StationID] = s
 	}
+	cutoff, _ := time.Parse("15:04", time.Now().Add(-time.Minute*2).Format("15:04"))
 	stops := make([]ScheduledStop, 0, len(journeyStops))
+	etd, err := time.Parse("15:04", departureTime.ETD())
+	if err != nil {
+		log.Printf("unable to parse ETD: %v", err)
+	}
 	for _, stop := range journeyStops {
-		eta, jeta, jstatus := calculateETAAndJourney(departureTime, stop.timeToArrival, journeyCache[stop.station.ID])
+		eta, jeta, jstatus, include := calculateETAAndJourney(etd, stop.timeToArrival, journeyCache[stop.station.ID], cutoff)
+		if !include {
+			continue
+		}
 		stops = append(stops, ScheduledStop{
 			Station:       stop.station,
 			TimeToArrival: stop.timeToArrival,
@@ -275,15 +291,14 @@ func journeyStopsToScheduledStopsWithVehicleUpdates(journeyStops []stop, departu
 	return stops
 }
 
-func calculateETAAndJourney(departureTime DepartureTime, timeToArrival time.Duration, vs VehicleStop) (string, string, string) {
-	if vs.StationID == "" {
-		return calculateETA(departureTime, timeToArrival), "NA", "journeyNA"
-	}
-	etd, err := time.Parse("15:04", departureTime.ETD())
-	if err != nil {
-		log.Printf("unable to parse ETD: %v", err)
-	}
+func calculateETAAndJourney(etd time.Time, timeToArrival time.Duration, vs VehicleStop, cutoff time.Time) (string, string, string, bool) {
 	eta := etd.Add(timeToArrival)
+	if vs.StationID == "" {
+		if eta.Before(cutoff) {
+			return "", "", "", false
+		}
+		return eta.Format("15:04"), "NA", "journeyNA", true
+	}
 	// journey eta
 	jetaStr := vs.ETATime()
 	jeta, _ := time.Parse("15:04", jetaStr)
@@ -293,7 +308,7 @@ func calculateETAAndJourney(departureTime DepartureTime, timeToArrival time.Dura
 			status = "journeyDelayed"
 		}
 	}
-	return eta.Format("15:04"), jetaStr, status
+	return eta.Format("15:04"), jetaStr, status, true
 }
 
 type timetableByDayOfWeek struct {
