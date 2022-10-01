@@ -20,6 +20,7 @@ type TFLStaticData interface {
 	Routes(mode string) []Route
 	ScheduledDepartureTimes(lineID, fromStationID, toStationID string, weekday time.Weekday) (ScheduledDepartureTimes, error)
 	ScheduledTimeTable(lineID, fromStationID, toStationID string, weekday time.Weekday, depTime DepartureTime) (ScheduledTimeTable, error)
+	ArrivalsFor(lineID, stationID string) (Arrivals, error)
 }
 
 type Line struct {
@@ -277,6 +278,16 @@ func (sd *staticData) Routes(lineID string) []Route {
 	return routes
 }
 
+type staticFetcher struct {
+	c            http.Client
+	linesURL     func(string) string
+	stationsURL  func(string) string
+	routesURL    func(string) string
+	statusURL    func(string) string
+	timetableURL func(string, string, string) string
+	arrivalsURL  func(string, string) string
+}
+
 func newStaticFetcher() *staticFetcher {
 	c := http.Client{Timeout: time.Duration(5) * time.Second}
 	return &staticFetcher{
@@ -295,6 +306,9 @@ func newStaticFetcher() *staticFetcher {
 		},
 		timetableURL: func(lineID, srcStation, destStation string) string {
 			return fmt.Sprintf(TimetablesAPI, lineID, srcStation, destStation)
+		},
+		arrivalsURL: func(lineID, stationID string) string {
+			return fmt.Sprintf(LineArrivalsAPI, lineID, stationID)
 		},
 	}
 }
