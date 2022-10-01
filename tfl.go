@@ -21,6 +21,7 @@ type TFLStaticData interface {
 	ScheduledDepartureTimes(lineID, fromStationID, toStationID string, weekday time.Weekday) (ScheduledDepartureTimes, error)
 	ScheduledTimeTable(lineID, fromStationID, toStationID string, weekday time.Weekday, depTime DepartureTime, vehicleID string) (ScheduledTimeTable, error)
 	ArrivalsFor(lineID, stationID string) (Arrivals, error)
+	VehicleScheduleFor(lineID, vehicleID string) (VehicleSchedule, error)
 }
 
 type Line struct {
@@ -286,6 +287,7 @@ type staticFetcher struct {
 	statusURL    func(string) string
 	timetableURL func(string, string, string) string
 	arrivalsURL  func(string, string) string
+	vehiclesURL  func(string) string
 }
 
 func newStaticFetcher() *staticFetcher {
@@ -309,6 +311,9 @@ func newStaticFetcher() *staticFetcher {
 		},
 		arrivalsURL: func(lineID, stationID string) string {
 			return fmt.Sprintf(LineArrivalsAPI, lineID, stationID)
+		},
+		vehiclesURL: func(vid string) string {
+			return fmt.Sprintf(VehicleArrivalsAPI, vid)
 		},
 	}
 }

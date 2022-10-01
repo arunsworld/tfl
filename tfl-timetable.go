@@ -212,7 +212,12 @@ func (tm *timetableManager) scheduledTimeTableFor(lineID, srcStationID, destStat
 	if !ok {
 		return ScheduledTimeTable{}, fmt.Errorf("no journey found for departure time: %s", departureTime.ETD())
 	}
-	stops := journeyStopsToScheduledStops(journey.stops, departureTime)
+	var stops []ScheduledStop
+	if vehicleID == "" {
+		stops = journeyStopsToScheduledStops(journey.stops, departureTime)
+	} else {
+		// tm.fetcher.fetchArrivals(lineID,srcStationID)
+	}
 	return ScheduledTimeTable{
 		From:          tbdw.stops[srcStationID],
 		To:            tbdw.stops[destStationID],
