@@ -13,6 +13,7 @@ type timeTableRequest struct {
 	destStationID string
 	weekday       time.Weekday
 	departureTime DepartureTime
+	vehicleID     string
 	// response
 	departureTimeResp chan struct {
 		depTimes ScheduledDepartureTimes
@@ -37,7 +38,7 @@ func (sd *staticData) monitorTimetableFetch() {
 				err:      err,
 			}
 		} else {
-			stt, err := ttMgr.scheduledTimeTableFor(req.lineID, req.fromStationID, req.destStationID, req.weekday, req.departureTime)
+			stt, err := ttMgr.scheduledTimeTableFor(req.lineID, req.fromStationID, req.destStationID, req.weekday, req.departureTime, req.vehicleID)
 			req.scheduledTimeTableResp <- struct {
 				scheduledTimeTable ScheduledTimeTable
 				err                error
@@ -70,7 +71,9 @@ func (sd *staticData) ScheduledDepartureTimes(lineID, fromStationID, toStationID
 	}
 }
 
-func (sd *staticData) ScheduledTimeTable(lineID, fromStationID, toStationID string, weekday time.Weekday, depTime DepartureTime) (ScheduledTimeTable, error) {
+func (sd *staticData) ScheduledTimeTable(lineID, fromStationID, toStationID string,
+	weekday time.Weekday, depTime DepartureTime, vehicleID string) (ScheduledTimeTable, error) {
+
 	resp := make(chan struct {
 		scheduledTimeTable ScheduledTimeTable
 		err                error
@@ -81,6 +84,7 @@ func (sd *staticData) ScheduledTimeTable(lineID, fromStationID, toStationID stri
 		destStationID:          toStationID,
 		weekday:                weekday,
 		departureTime:          depTime,
+		vehicleID:              vehicleID,
 		scheduledTimeTableResp: resp,
 	}
 	select {
@@ -137,6 +141,8 @@ type ScheduledStop struct {
 	Station       Station
 	TimeToArrival time.Duration
 	ETA           string
+	JourneyETA    string
+	JourneyStatus string
 }
 
 type timetableCacheKey struct {
@@ -170,7 +176,7 @@ func newTimetableManager(fetcher *staticFetcher) *timetableManager {
 func (tm *timetableManager) timetableFor(lineID, srcStationID, destStationID string) (timetableByDayOfWeek, error) {
 	key := timetableCacheKey{line: lineID, from: srcStationID, to: destStationID}
 	tbdw, ok := tm.cache[key]
-	if ok {
+	if ok && tbdw.isStillCurrent() {
 		return tbdw, nil
 	}
 	v, err := tm.fetcher.fetchTimetable(lineID, srcStationID, destStationID)
@@ -195,7 +201,7 @@ func (tm *timetableManager) scheduledDepartureTimesFor(lineID, srcStationID, des
 }
 
 func (tm *timetableManager) scheduledTimeTableFor(lineID, srcStationID, destStationID string,
-	weekday time.Weekday, departureTime DepartureTime) (ScheduledTimeTable, error) {
+	weekday time.Weekday, departureTime DepartureTime, vehicleID string) (ScheduledTimeTable, error) {
 
 	tbdw, err := tm.timetableFor(lineID, srcStationID, destStationID)
 	if err != nil {
@@ -206,14 +212,7 @@ func (tm *timetableManager) scheduledTimeTableFor(lineID, srcStationID, destStat
 	if !ok {
 		return ScheduledTimeTable{}, fmt.Errorf("no journey found for departure time: %s", departureTime.ETD())
 	}
-	stops := make([]ScheduledStop, 0, len(journey.stops))
-	for _, stop := range journey.stops {
-		stops = append(stops, ScheduledStop{
-			Station:       stop.station,
-			TimeToArrival: stop.timeToArrival,
-			ETA:           calculateETA(departureTime, stop.timeToArrival),
-		})
-	}
+	stops := journeyStopsToScheduledStops(journey.stops, departureTime)
 	return ScheduledTimeTable{
 		From:          tbdw.stops[srcStationID],
 		To:            tbdw.stops[destStationID],
@@ -222,12 +221,36 @@ func (tm *timetableManager) scheduledTimeTableFor(lineID, srcStationID, destStat
 	}, nil
 }
 
+func journeyStopsToScheduledStops(journeyStops []stop, departureTime DepartureTime) []ScheduledStop {
+	stops := make([]ScheduledStop, 0, len(journeyStops))
+	for _, stop := range journeyStops {
+		stops = append(stops, ScheduledStop{
+			Station:       stop.station,
+			TimeToArrival: stop.timeToArrival,
+			ETA:           calculateETA(departureTime, stop.timeToArrival),
+		})
+	}
+	return stops
+}
+
 type timetableByDayOfWeek struct {
-	stops    map[string]Station
-	monToThu timeTableDetails
-	fri      timeTableDetails
-	sun      timeTableDetails
-	others   timeTableDetails
+	stops     map[string]Station
+	monToThu  timeTableDetails
+	fri       timeTableDetails
+	sun       timeTableDetails
+	others    timeTableDetails
+	createdOn time.Time
+}
+
+func (tbdw timetableByDayOfWeek) isStillCurrent() bool {
+	cachedDataFetchDate := tbdw.createdOn.Format("2006-01-02")
+	today := time.Now().Format("2006-01-02")
+	if today != cachedDataFetchDate {
+		log.Printf("cache invalidated...")
+		return false
+	}
+	log.Printf("cache still OK")
+	return true
 }
 
 func (tbdw timetableByDayOfWeek) timeTableDetailsFor(weekday time.Weekday) timeTableDetails {

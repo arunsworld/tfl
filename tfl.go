@@ -19,7 +19,7 @@ type TFLStaticData interface {
 	Stations(mode string) []Station
 	Routes(mode string) []Route
 	ScheduledDepartureTimes(lineID, fromStationID, toStationID string, weekday time.Weekday) (ScheduledDepartureTimes, error)
-	ScheduledTimeTable(lineID, fromStationID, toStationID string, weekday time.Weekday, depTime DepartureTime) (ScheduledTimeTable, error)
+	ScheduledTimeTable(lineID, fromStationID, toStationID string, weekday time.Weekday, depTime DepartureTime, vehicleID string) (ScheduledTimeTable, error)
 	ArrivalsFor(lineID, stationID string) (Arrivals, error)
 }
 

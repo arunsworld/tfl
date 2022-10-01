@@ -104,7 +104,8 @@ func tflTimetableWrapperTotimetableByDayOfWeek(input tflTimetableWrapper, lineID
 	}
 
 	result := timetableByDayOfWeek{
-		stops: stopsCache,
+		stops:     stopsCache,
+		createdOn: time.Now(),
 	}
 	var defaultTimeTableDetails timeTableDetails
 	for _, schedule := range route.Schedules {
