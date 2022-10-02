@@ -58,7 +58,7 @@
                         [[if eq .ScheduledTimeTable.TrackingVehicle ""]]
                         <p class="card-subtitle mb-2 text-muted">Journey at [[.ScheduledTimeTable.DepartureTime.ETD]].</p>
                         [[else]]
-                        <p class="card-subtitle mb-2 text-muted">Tracking Vehicle [[.ScheduledTimeTable.TrackingVehicle]]</p>
+                        <p class="card-subtitle mb-2 text-muted">Tracking Vehicle <a target="_blank" href="/vehicles/[[.Mode]]/[[.LineID]]/[[.ScheduledTimeTable.TrackingVehicle]]">[[.ScheduledTimeTable.TrackingVehicle]]</a>.</p>
                         <p class="card-subtitle mb-2 text-muted">On journey from [[.ScheduledTimeTable.From.Name]] at [[.ScheduledTimeTable.DepartureTime.ETD]].</p>
                         [[end]]
                         <table class="table">

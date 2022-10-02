@@ -271,17 +271,19 @@ func journeyStopsToScheduledStopsWithVehicleUpdates(journeyStops []stop, departu
 		}
 		journeyCache[s.StationID] = s
 	}
-	cutoff, _ := time.Parse("15:04", time.Now().Add(-time.Minute*2).Format("15:04"))
+	cutoff, _ := time.Parse("15:04", gmtc.convert(time.Now()).Add(-time.Minute*2).Format("15:04"))
 	stops := make([]ScheduledStop, 0, len(journeyStops))
 	etd, err := time.Parse("15:04", departureTime.ETD())
 	if err != nil {
 		log.Printf("unable to parse ETD: %v", err)
 	}
+	firstInclude := false // once we have an include, the remaining stops should be included
 	for _, stop := range journeyStops {
 		eta, jeta, jstatus, include := calculateETAAndJourney(etd, stop.timeToArrival, journeyCache[stop.station.ID], cutoff)
-		if !include {
+		if !firstInclude && !include {
 			continue
 		}
+		firstInclude = true
 		stops = append(stops, ScheduledStop{
 			Station:       stop.station,
 			TimeToArrival: stop.timeToArrival,
@@ -296,10 +298,7 @@ func journeyStopsToScheduledStopsWithVehicleUpdates(journeyStops []stop, departu
 func calculateETAAndJourney(etd time.Time, timeToArrival time.Duration, vs VehicleStop, cutoff time.Time) (string, string, string, bool) {
 	eta := etd.Add(timeToArrival)
 	if vs.StationID == "" {
-		if eta.Before(cutoff) {
-			return "", "", "", false
-		}
-		return eta.Format("15:04"), "NA", "journeyNA", true
+		return eta.Format("15:04"), "NA", "journeyNA", !eta.Before(cutoff)
 	}
 	// journey eta
 	jetaStr := vs.ETATime()
@@ -326,6 +325,7 @@ func (tbdw timetableByDayOfWeek) isStillCurrent() bool {
 	cachedDataFetchDate := tbdw.createdOn.Format("2006-01-02")
 	today := time.Now().Format("2006-01-02")
 	if today != cachedDataFetchDate {
+		log.Printf("INFO: timetable created on %v invalidated today %v", cachedDataFetchDate, today)
 		return false
 	}
 	return true
@@ -358,5 +358,3 @@ type stop struct {
 	station       Station
 	timeToArrival time.Duration
 }
-
-// Timetable Fetching
